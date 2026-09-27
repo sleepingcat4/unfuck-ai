@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: unfuck-ai
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --workers 1 --threads 4 --timeout 60 app:app
+    healthCheckPath: /
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: PUBLISH_PHRASE
+        sync: false
+      - key: MACOS_ONLY
+        value: "true"
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: CHAT_DATA_DIR
+        value: /var/data
+      - key: CHAT_UPLOAD_DIR
+        value: /var/data/chat_uploads
+      - key: CHAT_RP_ID
+        sync: false
+      - key: CHAT_ORIGIN
+        sync: false
+    disk:
+      name: unfuck-ai-data
+      mountPath: /var/data
+      sizeGB: 1

@@ -17,6 +17,7 @@ from flask import (
 )
 
 from dotenv import load_dotenv
+from chat import chat_bp, init_chat
 
 
 load_dotenv()
@@ -101,8 +102,36 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(
         hours=2
     ),
-    MAX_CONTENT_LENGTH=1024 * 1024,
+    MAX_CONTENT_LENGTH=10 * 1024 * 1024,
 )
+
+
+init_chat(
+    app,
+    BASE_DIR,
+)
+
+
+app.register_blueprint(
+    chat_bp
+)
+
+
+@app.get("/unfuck.png")
+def favicon():
+
+    return send_from_directory(
+        BASE_DIR,
+        "unfuck.png",
+        mimetype="image/png",
+        max_age=86400,
+    )
+
+
+@app.get("/favicon.ico")
+def favicon_ico():
+
+    return favicon()
 
 
 SAFE_FILENAME = re.compile(
@@ -1023,6 +1052,24 @@ def delete_post(filename):
 @app.after_request
 def security_headers(response):
 
+    is_chat_path = request.path.startswith(
+        "/chat"
+    )
+
+
+    camera_policy = (
+        "camera=(self), "
+        if is_chat_path
+        else "camera=(), "
+    )
+
+
+    image_policy = (
+        "img-src 'self' data: blob:; "
+        if is_chat_path
+        else "img-src 'self' data:; "
+    )
+
     response.headers[
         "X-Content-Type-Options"
     ] = "nosniff"
@@ -1043,7 +1090,8 @@ def security_headers(response):
     response.headers[
         "Permissions-Policy"
     ] = (
-        "camera=(), "
+        camera_policy
+        +
         "microphone=(), "
         "geolocation=()"
     )
@@ -1056,7 +1104,8 @@ def security_headers(response):
         "script-src 'self'; "
         "style-src 'self' "
         "'unsafe-inline'; "
-        "img-src 'self' data:; "
+        + image_policy
+        +
         "font-src 'self'; "
         "connect-src 'self'; "
         "object-src 'none'; "
@@ -1066,8 +1115,9 @@ def security_headers(response):
     )
 
 
-    if request.path.startswith(
-        "/api/"
+    if (
+        request.path.startswith("/api/")
+        or request.path.startswith("/chat/api/")
     ):
 
         response.headers[

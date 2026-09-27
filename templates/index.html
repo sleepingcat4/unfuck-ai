@@ -21,11 +21,8 @@
 
   <title>Unfuck AI</title>
 
-  <link
-    rel="icon"
-    type="image/svg+xml"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23e10600'/%3E%3Cpath d='M18 17v19c0 9 5 13 14 13s14-4 14-13V17h-9v19c0 4-1 6-5 6s-5-2-5-6V17z' fill='white'/%3E%3C/svg%3E"
-  >
+  <link rel="icon" type="image/png" href="{{ url_for('favicon') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('favicon') }}">
 
   <link
     rel="stylesheet"
@@ -53,15 +50,26 @@
       Unfuck AI
     </a>
 
-    <button
-      class="writing-button"
-      data-open-write
-      type="button"
-      aria-haspopup="dialog"
-      aria-controls="auth-overlay"
-    >
-      Writing
-    </button>
+    <div class="nav-actions">
+
+      <a
+        class="chat-link"
+        href="{{ url_for('chat.chat_page') }}"
+      >
+        Chat
+      </a>
+
+      <button
+        class="writing-button"
+        data-open-write
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="auth-overlay"
+      >
+        Writing
+      </button>
+
+    </div>
 
   </nav>
 

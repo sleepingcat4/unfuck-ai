@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#e10600">
+  <meta name="csrf-token" content="{{ chat_csrf }}">
+  <meta name="chat-authenticated" content="{{ 'true' if chat_user else 'false' }}">
+  <title>Chat · Unfuck AI</title>
+  <link rel="icon" type="image/png" href="{{ url_for('favicon') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('favicon') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+</head>
+
+<body>
+
+  <div class="chat-noise" aria-hidden="true"></div>
+
+  {% if not chat_user %}
+
+  <main class="account-shell">
+
+    <section class="account-brand">
+
+      <a href="{{ url_for('index') }}" class="chat-brand">Unfuck AI</a>
+
+      <div>
+        <p class="chat-kicker">THE DIRECT LINE</p>
+        <h1>Talk without<br>the profile theatre.</h1>
+        <p class="account-copy">Random handles. Durable messages. Images. No followers, no feed, no personal brand.</p>
+      </div>
+
+      <small>Your identity stays behind the handle.</small>
+
+    </section>
+
+    <section class="account-panel">
+
+      <div class="account-card">
+
+        <section class="auth-view active">
+          <p class="chat-kicker">PASSKEY ONLY</p>
+          <h2>no hack<br>no leaks</h2>
+          <p class="auth-intro">Your device creates and protects the passkey. It may ask for Face ID, Touch ID, Windows Hello, your device PIN, or your device password.</p>
+          <div class="passkey-actions">
+            <button id="create-passkey" class="auth-primary" type="button"><span>Create a new identity</span><span>→</span></button>
+            <button id="passkey-login" class="passkey-login" type="button">use an existing passkey</button>
+          </div>
+          <p class="auth-explainer"><strong>Important:</strong> the PIN or password prompt belongs to your device. Unfuck AI never receives or stores it. You’ll get a random username after your passkey is verified.</p>
+        </section>
+
+        <p id="auth-status" class="auth-status" aria-live="polite"></p>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  {% else %}
+
+  <main class="chat-shell" data-user-id="{{ chat_user.id }}">
+
+    <aside class="chat-rail">
+
+      <a href="{{ url_for('index') }}" class="chat-brand">Unfuck AI</a>
+
+      <div class="identity-card">
+        <p>YOU ARE</p>
+        <strong id="my-username">{{ chat_user.username }}</strong>
+        <small>random by design</small>
+      </div>
+
+      <button id="edit-username" class="edit-username" type="button">✎ Change username</button>
+      <button id="add-passkey" class="add-passkey" type="button">＋ Add another passkey</button>
+
+      <div class="rail-heading">
+        <span>CONVERSATIONS</span>
+        <button id="mobile-search" type="button" aria-label="Toggle people search" aria-controls="people-panel" aria-expanded="false">⌕</button>
+      </div>
+
+      <div id="peer-list" class="peer-list"></div>
+
+      <button id="chat-logout" class="chat-logout" type="button">↪ Sign out</button>
+
+    </aside>
+
+    <section class="conversation">
+
+      <header class="conversation-head">
+        <div>
+          <p class="chat-kicker">DIRECT LINE</p>
+          <h1 id="active-name">Choose a human</h1>
+          <p id="typing-label" class="typing-label" aria-live="polite"></p>
+        </div>
+        <button id="open-search" class="round-icon" type="button" aria-label="Toggle people search" aria-controls="people-panel" aria-expanded="true">⌕</button>
+      </header>
+
+      <div id="message-stream" class="message-stream">
+        <div class="chat-empty">
+          <span>→</span>
+          <h2>Search a handle.<br>Send a thought.</h2>
+          <p>Messages wait here when people go offline.</p>
+        </div>
+      </div>
+
+      <div id="chat-error" class="chat-error" aria-live="polite"></div>
+
+      <form id="composer" class="composer">
+        <input id="image-input" type="file" hidden accept="image/jpeg,image/png,image/webp,image/gif" capture="environment">
+        <button id="image-button" class="composer-icon" type="button" aria-label="Select or take a photo" disabled>▧</button>
+        <input id="message-input" maxlength="4000" autocomplete="off" placeholder="Choose someone first" aria-label="Message" disabled>
+        <button id="send-button" class="send-button" type="submit" aria-label="Send message" disabled>↗</button>
+      </form>
+
+    </section>
+
+    <aside id="people-panel" class="people-panel">
+      <button id="close-search" class="panel-close" type="button" aria-label="Close search">×</button>
+      <p class="chat-kicker">FIND PEOPLE</p>
+      <h2>Start something.</h2>
+      <label class="people-search">⌕<input id="people-query" placeholder="Search random usernames" aria-label="Search registered users"></label>
+      <div id="people-results" class="people-results">
+        <p>Type at least two characters. Nobody's real name is exposed.</p>
+      </div>
+    </aside>
+
+  </main>
+
+  <div id="message-menu" class="message-menu" hidden role="dialog" aria-modal="true" aria-labelledby="message-menu-title">
+    <section class="message-menu-card">
+      <p class="chat-kicker">MESSAGE ACTIONS</p>
+      <h2 id="message-menu-title">What should happen?</h2>
+      <button id="report-button" class="message-menu-action report" type="button">Report message</button>
+      <button id="unsend-button" class="message-menu-action unsend" type="button">Unsend message</button>
+      <button id="message-menu-close" class="message-menu-cancel" type="button">Cancel</button>
+    </section>
+  </div>
+
+  <div id="username-menu" class="message-menu" hidden role="dialog" aria-modal="true" aria-labelledby="username-menu-title">
+    <form id="username-form" class="message-menu-card">
+      <p class="chat-kicker">YOUR HANDLE</p>
+      <h2 id="username-menu-title">Change username.</h2>
+      <label class="username-field">New username<input id="username-input" minlength="3" maxlength="24" pattern="[a-z0-9][a-z0-9_-]{2,23}" autocomplete="username" required></label>
+      <p class="username-help">3–24 lowercase letters, numbers, hyphens, or underscores. Every username is unique.</p>
+      <p id="username-status" class="auth-status" aria-live="polite"></p>
+      <button class="message-menu-action unsend" type="submit">Save username</button>
+      <button id="username-menu-close" class="message-menu-cancel" type="button">Cancel</button>
+    </form>
+  </div>
+
+  <div id="snap-overlay" class="snap-overlay" aria-hidden="true">
+    <div class="snap-card">
+      <button id="snap-close" class="snap-close" type="button" aria-label="Cancel image">×</button>
+      <img id="snap-preview" alt="Selected image preview">
+      <div class="snap-caption">
+        <input id="snap-text" maxlength="4000" placeholder="Add a caption…" aria-label="Image caption">
+        <button id="snap-send" type="button" aria-label="Send image">↗</button>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+
+</body>
+
+</html>

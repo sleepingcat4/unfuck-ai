@@ -1,3 +1,5 @@
 Flask>=3.1,<4
 python-dotenv>=1.0,<2
 gunicorn>=23,<24
+Pillow>=11,<12
+webauthn>=3.0,<4
