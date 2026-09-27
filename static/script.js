@@ -69,22 +69,18 @@ function formatDate(value = "") {
 function inlineMarkdown(text = "") {
 
   return escapeHTML(text)
-
     .replace(
       /`([^`]+)`/g,
       "<code>$1</code>"
     )
-
     .replace(
       /\*\*([^*]+)\*\*/g,
       "<strong>$1</strong>"
     )
-
     .replace(
       /\*([^*]+)\*/g,
       "<em>$1</em>"
     )
-
     .replace(
       /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
       '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
@@ -362,7 +358,6 @@ function openOverlay(
     "aria-hidden",
     "false"
   );
-
 
   document.body.classList.add(
     "modal-open"
@@ -644,8 +639,7 @@ async function loadPublicConfig() {
       error
     );
 
-    macOSOnly =
-      true;
+    macOSOnly = true;
 
   }
 
@@ -678,16 +672,12 @@ async function getPosts() {
 
   posts =
     text
-
       .split("\n")
-
       .map(
         line =>
           line.trim()
       )
-
       .filter(Boolean)
-
       .map(line => {
 
         try {
@@ -705,9 +695,7 @@ async function getPosts() {
         }
 
       })
-
       .filter(Boolean)
-
       .sort(
         (a, b) =>
           String(
@@ -1031,7 +1019,6 @@ function bindReaderButtons() {
 
           event.preventDefault();
 
-
           openReader(
             event.currentTarget
           );
@@ -1159,8 +1146,7 @@ async function startWriting(
 
   if (trigger) {
 
-    trigger.disabled =
-      true;
+    trigger.disabled = true;
 
   }
 
@@ -1179,16 +1165,14 @@ async function startWriting(
 
     if (phraseInput) {
 
-      phraseInput.value =
-        "";
+      phraseInput.value = "";
 
     }
 
 
     if (status) {
 
-      status.textContent =
-        "";
+      status.textContent = "";
 
     }
 
@@ -1204,8 +1188,7 @@ async function startWriting(
 
     if (trigger) {
 
-      trigger.disabled =
-        false;
+      trigger.disabled = false;
 
     }
 
@@ -1214,15 +1197,22 @@ async function startWriting(
 }
 
 
-function bindWriteButton() {
+function bindWriteButtons() {
 
-  $("#open-write")
-    ?.addEventListener(
+  const buttons =
+    new Set([
+      ...$$("[data-open-write]"),
+      ...$$("#open-write")
+    ]);
+
+
+  buttons.forEach(button => {
+
+    button.addEventListener(
       "click",
       event => {
 
         event.preventDefault();
-
 
         startWriting(
           event.currentTarget
@@ -1230,6 +1220,8 @@ function bindWriteButton() {
 
       }
     );
+
+  });
 
 }
 
@@ -1286,8 +1278,7 @@ $("#auth-form")
 
       if (button) {
 
-        button.disabled =
-          true;
+        button.disabled = true;
 
       }
 
@@ -1316,7 +1307,6 @@ $("#auth-form")
                   phrase,
 
                   device: {
-
                     platform:
                       navigator
                         .userAgentData
@@ -1329,9 +1319,7 @@ $("#auth-form")
                     userAgent:
                       navigator.userAgent ||
                       ""
-
                   }
-
                 })
             }
           );
@@ -1382,22 +1370,19 @@ $("#auth-form")
         }
 
 
-        editorAuthenticated =
-          true;
+        editorAuthenticated = true;
 
 
         if (input) {
 
-          input.value =
-            "";
+          input.value = "";
 
         }
 
 
         if (status) {
 
-          status.textContent =
-            "";
+          status.textContent = "";
 
         }
 
@@ -1408,8 +1393,7 @@ $("#auth-form")
 
       catch (error) {
 
-        editorAuthenticated =
-          false;
+        editorAuthenticated = false;
 
 
         if (status) {
@@ -1426,8 +1410,7 @@ $("#auth-form")
 
         if (button) {
 
-          button.disabled =
-            false;
+          button.disabled = false;
 
         }
 
@@ -1584,11 +1567,9 @@ function updatePreview() {
 
   editorPreview.innerHTML =
     markdown.trim()
-
       ? renderMarkdown(
           markdown
         )
-
       : "<p>Preview will appear here.</p>";
 
 }
@@ -1603,6 +1584,7 @@ editorFields.forEach(
         () => {
 
           saveDraft();
+
           updatePreview();
 
         }
@@ -1618,13 +1600,9 @@ async function openEditor() {
     await checkAuthentication();
 
 
-  if (
-    !authenticated ||
-    !editorAuthenticated
-  ) {
+  if (!authenticated) {
 
-    editorAuthenticated =
-      false;
+    editorAuthenticated = false;
 
 
     const input =
@@ -1636,8 +1614,7 @@ async function openEditor() {
 
     if (input) {
 
-      input.value =
-        "";
+      input.value = "";
 
     }
 
@@ -1659,6 +1636,9 @@ async function openEditor() {
     return;
 
   }
+
+
+  editorAuthenticated = true;
 
 
   openOverlay(
@@ -1816,17 +1796,22 @@ $("#publish-button")
     "click",
     async event => {
 
+      const button =
+        event.currentTarget;
+
+
       const authenticated =
         await checkAuthentication();
 
 
-      if (
-        !authenticated ||
-        !editorAuthenticated
-      ) {
+      if (!authenticated) {
 
-        editorAuthenticated =
-          false;
+        editorAuthenticated = false;
+
+
+        showPublishStatus(
+          "Authentication expired."
+        );
 
 
         const editorOverlay =
@@ -1838,7 +1823,6 @@ $("#publish-button")
           editorOverlay.classList.remove(
             "open"
           );
-
 
           editorOverlay.setAttribute(
             "aria-hidden",
@@ -1862,7 +1846,7 @@ $("#publish-button")
 
         openOverlay(
           "auth-overlay",
-          event.currentTarget
+          button
         );
 
 
@@ -1871,42 +1855,42 @@ $("#publish-button")
       }
 
 
-      const payload = {
-
-        title:
-          $("#editor-title")
-            ?.value
-            .trim() ||
-          "",
-
-        author:
-          $("#editor-author")
-            ?.value
-            .trim() ||
-          "",
-
-        date:
-          $("#editor-date")
-            ?.value
-            .trim() ||
-          "",
-
-        file:
-          $("#editor-file")
-            ?.value
-            .trim() ||
-          "",
-
-        markdown:
-          markdownEditor
-            ?.value
-            .trim() ||
-          ""
-
-      };
+      const title =
+        $("#editor-title")
+          ?.value
+          .trim() ||
+        "";
 
 
-      if (!payload.title) {
+      const author =
+        $("#editor-author")
+          ?.value
+          .trim() ||
+        "";
+
+
+      const date =
+        $("#editor-date")
+          ?.value
+          .trim() ||
+        "";
+
+
+      const file =
+        $("#editor-file")
+          ?.value
+          .trim() ||
+        "";
+
+
+      const markdown =
+        markdownEditor
+          ?.value
+          .trim() ||
+        "";
+
+
+      if (!title) {
 
         showPublishStatus(
           "Add a title."
@@ -1917,7 +1901,7 @@ $("#publish-button")
       }
 
 
-      if (!payload.author) {
+      if (!author) {
 
         showPublishStatus(
           "Add an author."
@@ -1928,7 +1912,7 @@ $("#publish-button")
       }
 
 
-      if (!payload.date) {
+      if (!date) {
 
         showPublishStatus(
           "Add a date."
@@ -1941,9 +1925,7 @@ $("#publish-button")
 
       if (
         !/^[A-Za-z0-9_-]+\.md$/
-          .test(
-            payload.file
-          )
+          .test(file)
       ) {
 
         showPublishStatus(
@@ -1955,7 +1937,7 @@ $("#publish-button")
       }
 
 
-      if (!payload.markdown) {
+      if (!markdown) {
 
         showPublishStatus(
           "Write something first."
@@ -1966,13 +1948,16 @@ $("#publish-button")
       }
 
 
-      const button =
-        event.currentTarget;
+      const payload = {
+        title,
+        author,
+        date,
+        file,
+        markdown
+      };
 
 
-      button.disabled =
-        true;
-
+      button.disabled = true;
 
       button.textContent =
         "Publishing…";
@@ -2003,7 +1988,6 @@ $("#publish-button")
                 JSON.stringify(
                   payload
                 )
-
             }
           );
 
@@ -2021,73 +2005,33 @@ $("#publish-button")
         catch {
 
           throw new Error(
-            "Server returned an invalid response."
+            `Server returned HTTP ${response.status}.`
           );
 
         }
 
 
-        if (
-          response.status === 401
-        ) {
-
-          editorAuthenticated =
-            false;
-
-
-          const editorOverlay =
-            $("#editor-overlay");
-
-
-          if (editorOverlay) {
-
-            editorOverlay.classList.remove(
-              "open"
-            );
-
-
-            editorOverlay.setAttribute(
-              "aria-hidden",
-              "true"
-            );
-
-          }
-
-
-          const status =
-            $("#auth-status");
-
-
-          if (status) {
-
-            status.textContent =
-              "Session expired. Enter the publishing phrase again.";
-
-          }
-
-
-          openOverlay(
-            "auth-overlay",
-            button
-          );
-
-
-          return;
-
-        }
-
-
-        if (
-          !response.ok ||
-          !result.ok
-        ) {
+        if (!response.ok) {
 
           throw new Error(
-            result.error ||
+            result?.error ||
+            `Publishing failed with HTTP ${response.status}.`
+          );
+
+        }
+
+
+        if (!result?.ok) {
+
+          throw new Error(
+            result?.error ||
             "Publishing failed."
           );
 
         }
+
+
+        editorDirty = false;
 
 
         const saveState =
@@ -2102,10 +2046,6 @@ $("#publish-button")
         }
 
 
-        editorDirty =
-          false;
-
-
         try {
 
           localStorage.removeItem(
@@ -2118,17 +2058,13 @@ $("#publish-button")
         }
 
 
-        await logoutWriter();
-
-
         await loadPosts();
 
 
         const published =
           posts.find(
             post =>
-              post.file ===
-              payload.file
+              post.file === file
           );
 
 
@@ -2142,7 +2078,6 @@ $("#publish-button")
             "open"
           );
 
-
           editorOverlay.setAttribute(
             "aria-hidden",
             "true"
@@ -2154,6 +2089,9 @@ $("#publish-button")
         document.body.classList.remove(
           "modal-open"
         );
+
+
+        await logoutWriter();
 
 
         await openReader(
@@ -2174,6 +2112,12 @@ $("#publish-button")
 
       catch (error) {
 
+        console.error(
+          "Publish failed:",
+          error
+        );
+
+
         showPublishStatus(
           error.message ||
           "Publishing failed."
@@ -2183,9 +2127,7 @@ $("#publish-button")
 
       finally {
 
-        button.disabled =
-          false;
-
+        button.disabled = false;
 
         button.textContent =
           "Publish";
@@ -2238,7 +2180,7 @@ document.addEventListener(
 
     bindReaderButtons();
 
-    bindWriteButton();
+    bindWriteButtons();
 
 
     await loadPublicConfig();
@@ -2270,8 +2212,7 @@ document.addEventListener(
       const post =
         posts.find(
           item =>
-            item.file ===
-            file
+            item.file === file
         );
 
 

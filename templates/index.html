@@ -1,98 +1,686 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#e10600">
-  <meta name="description" content="Unfuck AI — critical writing on AI research, research culture, engineering projects, and hobbyist experiments.">
-  <title>Unfuck AI</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23e10600'/%3E%3Cpath d='M18 17v19c0 9 5 13 14 13s14-4 14-13V17h-9v19c0 4-1 6-5 6s-5-2-5-6V17z' fill='white'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-  <div class="noise" aria-hidden="true"></div>
 
-  <nav class="nav" aria-label="Primary navigation">
-    <a href="#top" class="brand">Unfuck AI</a>
-    <button class="writing-button" data-open-reader type="button" aria-haspopup="dialog" aria-controls="reader-overlay" aria-expanded="false">Writing</button>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <meta
+    name="theme-color"
+    content="#e10600"
+  >
+
+  <meta
+    name="description"
+    content="Unfuck AI — critical writing on AI research, research culture, engineering projects, and hobbyist experiments."
+  >
+
+  <title>Unfuck AI</title>
+
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23e10600'/%3E%3Cpath d='M18 17v19c0 9 5 13 14 13s14-4 14-13V17h-9v19c0 4-1 6-5 6s-5-2-5-6V17z' fill='white'/%3E%3C/svg%3E"
+  >
+
+  <link
+    rel="stylesheet"
+    href="/static/style.css"
+  >
+</head>
+
+<body>
+
+  <div
+    class="noise"
+    aria-hidden="true"
+  ></div>
+
+
+  <nav
+    class="nav"
+    aria-label="Primary navigation"
+  >
+
+    <a
+      href="#top"
+      class="brand"
+    >
+      Unfuck AI
+    </a>
+
+    <button
+      class="writing-button"
+      data-open-write
+      type="button"
+      aria-haspopup="dialog"
+      aria-controls="auth-overlay"
+    >
+      Writing
+    </button>
+
   </nav>
 
-  <header class="hero" id="top">
-    <div class="orbit orbit-one" aria-hidden="true"></div>
-    <div class="orbit orbit-two" aria-hidden="true"></div>
+
+  <header
+    class="hero"
+    id="top"
+  >
+
+    <div
+      class="orbit orbit-one"
+      aria-hidden="true"
+    ></div>
+
+    <div
+      class="orbit orbit-two"
+      aria-hidden="true"
+    ></div>
+
+
     <div class="shell hero-inner">
-      <p class="eyebrow">exploring sub-field artificial intelligence</p>
-      <h1>Unfuck<br><span>AI.</span></h1>
+
+      <p class="eyebrow">
+        exploring sub-field artificial intelligence
+      </p>
+
+
+      <h1>
+        Unfuck<br>
+        <span>AI.</span>
+      </h1>
+
+
       <div class="hero-bottom">
-        <p class="hero-copy">technical and engineering write-ups explaining algorithms, infrastructure and research papers related to artificial intelligence similar to Russian Habr. </p>
-        <button class="round-read" data-open-reader type="button" aria-label="Open writing" aria-haspopup="dialog" aria-controls="reader-overlay" aria-expanded="false">Read <span aria-hidden="true">↗</span></button>
+
+        <p class="hero-copy">
+          technical and engineering write-ups explaining algorithms,
+          infrastructure and research papers related to artificial intelligence
+          similar to Russian Habr.
+        </p>
+
+
+        <button
+          class="round-read"
+          data-open-reader
+          type="button"
+          aria-label="Open writing"
+          aria-haspopup="dialog"
+          aria-controls="reader-overlay"
+          aria-expanded="false"
+        >
+          Read
+        </button>
+
       </div>
+
     </div>
+
   </header>
 
+
   <main>
+
     <section class="dispatches">
+
       <div class="shell dispatch-grid">
-        <div><p class="section-label">What gets published</p><h2>Well-thought<br>Commentary</h2></div>
-        <div class="dispatch-copy"><p>I write well-studied technical commentary on sub-field artificial intelligence papers and share engineering projects that explore internet scalability, handling terabytes of data and teaching materials. </p><button class="text-link" data-open-reader type="button" aria-haspopup="dialog" aria-controls="reader-overlay" aria-expanded="false">Writing <span aria-hidden="true">→</span></button></div>
+
+        <div>
+
+          <p class="section-label">
+            What gets published
+          </p>
+
+          <h2>
+            Well-thought<br>
+            Commentary
+          </h2>
+
+        </div>
+
+
+        <div class="dispatch-copy">
+
+          <p>
+            I write well-studied technical commentary on sub-field artificial
+            intelligence papers and share engineering projects that explore
+            internet scalability, handling terabytes of data and teaching
+            materials.
+          </p>
+
+
+          <button
+            class="text-link"
+            data-open-write
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="auth-overlay"
+          >
+            Writing
+          </button>
+
+        </div>
+
       </div>
+
     </section>
+
 
     <section class="principles">
+
       <div class="shell principles-grid">
-        <article><span>01</span><div><h3>read</h3><p>reading state-of-art research papers, infrastructure and algorithms</p></div></article>
-        <article><span>02</span><div><h3>question</h3><p>why tf it works and how to break it</p></div></article>
-        <article><span>03</span><div><h3>explain</h3><p>be reviewer 2 with Area Chair vibe</p></div></article>
+
+        <article>
+
+          <span>
+            01
+          </span>
+
+          <div>
+
+            <h3>
+              read
+            </h3>
+
+            <p>
+              reading state-of-art research papers,
+              infrastructure and algorithms
+            </p>
+
+          </div>
+
+        </article>
+
+
+        <article>
+
+          <span>
+            02
+          </span>
+
+          <div>
+
+            <h3>
+              question
+            </h3>
+
+            <p>
+              why tf it works and how to break it
+            </p>
+
+          </div>
+
+        </article>
+
+
+        <article>
+
+          <span>
+            03
+          </span>
+
+          <div>
+
+            <h3>
+              explain
+            </h3>
+
+            <p>
+              be reviewer 2 with Area Chair vibe
+            </p>
+
+          </div>
+
+        </article>
+
       </div>
+
     </section>
+
 
     <section class="statement">
-      <div class="shell"><p>Think of it as a research notebook with the social energy of Reddit and the editorial restraint of people who have absolutely not slept enough.</p><p class="statement-note">AlexNet is the benchmark, everyone else should follow-thru</p></div>
+
+      <div class="shell">
+
+        <p>
+          Think of it as a research notebook with the social energy of Reddit
+          and the editorial restraint of people who have absolutely not slept
+          enough.
+        </p>
+
+        <p class="statement-note">
+          AlexNet is the benchmark, everyone else should follow-thru
+        </p>
+
+      </div>
+
     </section>
+
   </main>
 
+
   <footer>
-    <div class="shell footer-main"><h2>Unfuck AI</h2><div><p>Criticism, Engineering and Journalism</p><button class="footer-read" data-open-reader type="button" aria-haspopup="dialog" aria-controls="reader-overlay" aria-expanded="false">Writing</button></div></div>
-    <div class="shell footer-bottom">Made by Broken Mind</div>
+
+    <div class="shell footer-main">
+
+      <h2>
+        Unfuck AI
+      </h2>
+
+
+      <div>
+
+        <p>
+          Criticism, Engineering and Journalism
+        </p>
+
+
+        <button
+          class="footer-read"
+          data-open-write
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="auth-overlay"
+        >
+          Writing
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="shell footer-bottom">
+      Made by Broken Mind
+    </div>
+
   </footer>
 
-  <div class="overlay" id="reader-overlay" aria-hidden="true">
-    <div class="overlay-backdrop" data-close="reader-overlay"></div>
-    <section class="reader-window" role="dialog" aria-modal="true" aria-label="Unfuck AI writing">
-      <header class="window-header"><div class="window-title"><strong>Unfuck AI</strong><span>Writing</span></div><div class="window-actions"><button class="quiet-button" id="open-write" type="button">Write</button><button class="close-button" data-close="reader-overlay" type="button" aria-label="Close writing">×</button></div></header>
+
+  <div
+    class="overlay"
+    id="reader-overlay"
+    aria-hidden="true"
+  >
+
+    <div
+      class="overlay-backdrop"
+      data-close="reader-overlay"
+    ></div>
+
+
+    <section
+      class="reader-window"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Unfuck AI writing"
+    >
+
+      <header class="window-header">
+
+        <div class="window-title">
+
+          <strong>
+            Unfuck AI
+          </strong>
+
+          <span>
+            Writing
+          </span>
+
+        </div>
+
+
+        <div class="window-actions">
+
+          <button
+            class="quiet-button"
+            id="open-write"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="auth-overlay"
+          >
+            Write
+          </button>
+
+
+          <button
+            class="close-button"
+            data-close="reader-overlay"
+            type="button"
+            aria-label="Close writing"
+          >
+            ×
+          </button>
+
+        </div>
+
+      </header>
+
+
       <div class="reader-layout">
-        <aside class="post-list-panel" aria-label="Articles"><div class="panel-heading"><span>Choose something</span><span id="post-count"></span></div><div id="post-list"><div class="loading-card">Loading writing…</div></div></aside>
-        <main class="article-panel"><article class="article" id="article"><div class="empty-state">Choose something to read.</div></article></main>
+
+        <aside
+          class="post-list-panel"
+          aria-label="Articles"
+        >
+
+          <div class="panel-heading">
+
+            <span>
+              Choose something
+            </span>
+
+            <span id="post-count"></span>
+
+          </div>
+
+
+          <div id="post-list">
+
+            <div class="loading-card">
+              Loading writing…
+            </div>
+
+          </div>
+
+        </aside>
+
+
+        <main class="article-panel">
+
+          <article
+            class="article"
+            id="article"
+          >
+
+            <div class="empty-state">
+              Choose something to read.
+            </div>
+
+          </article>
+
+        </main>
+
       </div>
+
     </section>
+
   </div>
 
-  <div class="overlay" id="auth-overlay" aria-hidden="true">
-    <div class="overlay-backdrop" data-close="auth-overlay"></div>
-    <section class="auth-window" role="dialog" aria-modal="true" aria-label="Writer access">
-      <button class="close-button auth-close" data-close="auth-overlay" type="button" aria-label="Close">×</button>
-      <p class="auth-label">Private editor</p><h2>Write.</h2><p>Enter the publishing phrase to continue.</p>
-      <form id="auth-form" autocomplete="off"><label class="sr-only" for="auth-phrase">Publishing phrase</label><input id="auth-phrase" type="password" autocomplete="current-password" placeholder="Publishing phrase" required><button class="primary-button" type="submit">Continue</button></form>
-      <p class="form-status" id="auth-status" aria-live="polite"></p>
+
+  <div
+    class="overlay"
+    id="auth-overlay"
+    aria-hidden="true"
+  >
+
+    <div
+      class="overlay-backdrop"
+      data-close="auth-overlay"
+    ></div>
+
+
+    <section
+      class="auth-window"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Writer access"
+    >
+
+      <button
+        class="close-button auth-close"
+        data-close="auth-overlay"
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+
+      <p class="auth-label">
+        Private editor
+      </p>
+
+
+      <h2>
+        Write.
+      </h2>
+
+
+      <p>
+        Enter the publishing phrase to continue.
+      </p>
+
+
+      <form
+        id="auth-form"
+        autocomplete="off"
+      >
+
+        <label
+          class="sr-only"
+          for="auth-phrase"
+        >
+          Publishing phrase
+        </label>
+
+
+        <input
+          id="auth-phrase"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Publishing phrase"
+          required
+        >
+
+
+        <button
+          class="primary-button"
+          type="submit"
+        >
+          Continue
+        </button>
+
+      </form>
+
+
+      <p
+        class="form-status"
+        id="auth-status"
+        aria-live="polite"
+      ></p>
+
     </section>
+
   </div>
 
-  <div class="overlay" id="editor-overlay" aria-hidden="true">
+
+  <div
+    class="overlay"
+    id="editor-overlay"
+    aria-hidden="true"
+  >
+
     <div class="overlay-backdrop"></div>
-    <section class="editor-window" role="dialog" aria-modal="true" aria-label="Unfuck AI editor">
-      <header class="window-header editor-header"><div class="window-title"><strong>Unfuck AI</strong><span>Editor</span><span class="save-state" id="save-state">Draft</span></div><div class="window-actions"><button class="publish-button" id="publish-button" type="button">Publish</button><button class="close-button" data-close="editor-overlay" type="button" aria-label="Close editor">×</button></div></header>
+
+
+    <section
+      class="editor-window"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Unfuck AI editor"
+    >
+
+      <header class="window-header editor-header">
+
+        <div class="window-title">
+
+          <strong>
+            Unfuck AI
+          </strong>
+
+          <span>
+            Editor
+          </span>
+
+          <span
+            class="save-state"
+            id="save-state"
+          >
+            Draft
+          </span>
+
+        </div>
+
+
+        <div class="window-actions">
+
+          <button
+            class="publish-button"
+            id="publish-button"
+            type="button"
+          >
+            Publish
+          </button>
+
+
+          <button
+            class="close-button"
+            data-close="editor-overlay"
+            type="button"
+            aria-label="Close editor"
+          >
+            ×
+          </button>
+
+        </div>
+
+      </header>
+
+
       <div class="editor-meta">
-        <label class="sr-only" for="editor-title">Title</label><input id="editor-title" class="title-input" type="text" placeholder="Untitled argument" maxlength="200">
-        <div class="meta-row"><label class="sr-only" for="editor-author">Author</label><input id="editor-author" type="text" placeholder="Author" maxlength="100"><label class="sr-only" for="editor-date">Date</label><input id="editor-date" type="date"><label class="sr-only" for="editor-file">Filename</label><input id="editor-file" type="text" placeholder="article-name.md"></div>
+
+        <label
+          class="sr-only"
+          for="editor-title"
+        >
+          Title
+        </label>
+
+
+        <input
+          id="editor-title"
+          class="title-input"
+          type="text"
+          placeholder="Untitled argument"
+          maxlength="200"
+        >
+
+
+        <div class="meta-row">
+
+          <label
+            class="sr-only"
+            for="editor-author"
+          >
+            Author
+          </label>
+
+
+          <input
+            id="editor-author"
+            type="text"
+            placeholder="Author"
+            maxlength="100"
+          >
+
+
+          <label
+            class="sr-only"
+            for="editor-date"
+          >
+            Date
+          </label>
+
+
+          <input
+            id="editor-date"
+            type="date"
+          >
+
+
+          <label
+            class="sr-only"
+            for="editor-file"
+          >
+            Filename
+          </label>
+
+
+          <input
+            id="editor-file"
+            type="text"
+            placeholder="article-name.md"
+          >
+
+        </div>
+
       </div>
+
+
       <div class="editor-layout">
-        <section class="editor-pane"><div class="pane-label">Markdown</div><textarea id="markdown-editor" spellcheck="true" placeholder="# Start writing…"></textarea></section>
-        <section class="preview-pane"><div class="pane-label">Preview</div><article id="editor-preview" class="prose preview-prose"></article></section>
+
+        <section class="editor-pane">
+
+          <div class="pane-label">
+            Markdown
+          </div>
+
+
+          <textarea
+            id="markdown-editor"
+            spellcheck="true"
+            placeholder="# Start writing…"
+          ></textarea>
+
+        </section>
+
+
+        <section class="preview-pane">
+
+          <div class="pane-label">
+            Preview
+          </div>
+
+
+          <article
+            id="editor-preview"
+            class="prose preview-prose"
+          ></article>
+
+        </section>
+
       </div>
-      <div class="publish-status" id="publish-status" aria-live="polite"></div>
+
+
+      <div
+        class="publish-status"
+        id="publish-status"
+        aria-live="polite"
+      ></div>
+
     </section>
+
   </div>
+
 
   <script src="/static/script.js"></script>
+
 </body>
+
 </html>
