@@ -4,28 +4,17 @@ const $ = selector =>
 const $$ = selector =>
   [...document.querySelectorAll(selector)];
 
-
 let posts = [];
-
 let returnFocus = null;
-
 let editorDirty = false;
-
 let editorAuthenticated = false;
-
 let macOSOnly = true;
 
-
-const SITE_TITLE =
-  "Unfuck AI";
-
-const DRAFT_KEY =
-  "IKEWL-WAHAS-AJKAD-WAKLL";
+const SITE_TITLE = "Unfuck AI";
+const DRAFT_KEY = "IKEWL-WAHAS-AJKAD-WAKLL";
 
 
-const escapeHTML = (
-  value = ""
-) =>
+const escapeHTML = (value = "") =>
   String(value).replace(
     /[&<>"']/g,
     character => ({
@@ -38,25 +27,15 @@ const escapeHTML = (
   );
 
 
-const slugify = (
-  value = ""
-) =>
+const slugify = (value = "") =>
   String(value)
     .toLowerCase()
     .trim()
-    .replace(
-      /[^a-z0-9]+/g,
-      "-"
-    )
-    .replace(
-      /^-+|-+$/g,
-      ""
-    );
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 
-function formatDate(
-  value = ""
-) {
+function formatDate(value = "") {
 
   if (!value) {
     return "";
@@ -87,9 +66,7 @@ function formatDate(
 }
 
 
-function inlineMarkdown(
-  text = ""
-) {
+function inlineMarkdown(text = "") {
 
   return escapeHTML(text)
 
@@ -116,24 +93,17 @@ function inlineMarkdown(
 }
 
 
-function renderMarkdown(
-  source = ""
-) {
+function renderMarkdown(source = "") {
 
   const lines =
     String(source)
       .replace(/\r/g, "")
       .split("\n");
 
-
   let html = "";
-
   let paragraph = [];
-
   let listType = "";
-
   let inCode = false;
-
   let codeLines = [];
 
 
@@ -167,18 +137,14 @@ function renderMarkdown(
   };
 
 
-  for (
-    const line of lines
-  ) {
+  for (const line of lines) {
 
     if (
       line.startsWith("```")
     ) {
 
       flushParagraph();
-
       closeList();
-
 
       if (inCode) {
 
@@ -191,9 +157,7 @@ function renderMarkdown(
 
       }
 
-
-      inCode =
-        !inCode;
+      inCode = !inCode;
 
       continue;
 
@@ -202,21 +166,16 @@ function renderMarkdown(
 
     if (inCode) {
 
-      codeLines.push(
-        line
-      );
+      codeLines.push(line);
 
       continue;
 
     }
 
 
-    if (
-      !line.trim()
-    ) {
+    if (!line.trim()) {
 
       flushParagraph();
-
       closeList();
 
       continue;
@@ -233,13 +192,10 @@ function renderMarkdown(
     if (heading) {
 
       flushParagraph();
-
       closeList();
-
 
       const level =
         heading[1].length;
-
 
       html +=
         `<h${level}>${inlineMarkdown(
@@ -258,11 +214,9 @@ function renderMarkdown(
     ) {
 
       flushParagraph();
-
       closeList();
 
-      html +=
-        "<hr>";
+      html += "<hr>";
 
       continue;
 
@@ -274,9 +228,7 @@ function renderMarkdown(
     ) {
 
       flushParagraph();
-
       closeList();
-
 
       html +=
         `<blockquote>${inlineMarkdown(
@@ -306,12 +258,10 @@ function renderMarkdown(
 
       flushParagraph();
 
-
       const type =
         unordered
           ? "ul"
           : "ol";
-
 
       if (
         listType !== type
@@ -326,7 +276,6 @@ function renderMarkdown(
           type;
 
       }
-
 
       html +=
         `<li>${inlineMarkdown(
@@ -349,7 +298,6 @@ function renderMarkdown(
 
 
   flushParagraph();
-
   closeList();
 
 
@@ -375,41 +323,35 @@ function openOverlay(
 ) {
 
   const overlay =
-    document.getElementById(
-      id
-    );
-
+    document.getElementById(id);
 
   if (!overlay) {
     return;
   }
-
 
   returnFocus =
     trigger;
 
 
   $$(".overlay.open")
-    .forEach(
-      item => {
+    .forEach(item => {
 
-        if (
-          item.id !== id
-        ) {
+      if (
+        item.id !== id
+      ) {
 
-          item.classList.remove(
-            "open"
-          );
+        item.classList.remove(
+          "open"
+        );
 
-          item.setAttribute(
-            "aria-hidden",
-            "true"
-          );
-
-        }
+        item.setAttribute(
+          "aria-hidden",
+          "true"
+        );
 
       }
-    );
+
+    });
 
 
   overlay.classList.add(
@@ -425,6 +367,23 @@ function openOverlay(
   document.body.classList.add(
     "modal-open"
   );
+
+
+  if (
+    id === "reader-overlay"
+  ) {
+
+    $$("[data-open-reader]")
+      .forEach(button => {
+
+        button.setAttribute(
+          "aria-expanded",
+          "true"
+        );
+
+      });
+
+  }
 
 
   setTimeout(
@@ -443,15 +402,10 @@ function openOverlay(
 }
 
 
-async function closeOverlay(
-  id
-) {
+async function closeOverlay(id) {
 
   const overlay =
-    document.getElementById(
-      id
-    );
-
+    document.getElementById(id);
 
   if (!overlay) {
     return;
@@ -480,6 +434,17 @@ async function closeOverlay(
   if (
     id === "reader-overlay"
   ) {
+
+    $$("[data-open-reader]")
+      .forEach(button => {
+
+        button.setAttribute(
+          "aria-expanded",
+          "false"
+        );
+
+      });
+
 
     if (
       location.hash.startsWith(
@@ -522,22 +487,20 @@ async function closeOverlay(
 
 
 $$("[data-close]")
-  .forEach(
-    button => {
+  .forEach(button => {
 
-      button.addEventListener(
-        "click",
-        () => {
+    button.addEventListener(
+      "click",
+      () => {
 
-          closeOverlay(
-            button.dataset.close
-          );
+        closeOverlay(
+          button.dataset.close
+        );
 
-        }
-      );
+      }
+    );
 
-    }
-  );
+  });
 
 
 document.addEventListener(
@@ -547,7 +510,6 @@ document.addEventListener(
     const open =
       $$(".overlay.open")
         .at(-1);
-
 
     if (!open) {
       return;
@@ -583,17 +545,12 @@ document.addEventListener(
       )
       .filter(
         element =>
-          open.contains(
-            element
-          ) &&
-          element.offsetParent !==
-            null
+          open.contains(element) &&
+          element.offsetParent !== null
       );
 
 
-    if (
-      !focusable.length
-    ) {
+    if (!focusable.length) {
       return;
     }
 
@@ -607,8 +564,7 @@ document.addEventListener(
 
     if (
       event.shiftKey &&
-      document.activeElement ===
-        first
+      document.activeElement === first
     ) {
 
       event.preventDefault();
@@ -619,8 +575,7 @@ document.addEventListener(
 
     else if (
       !event.shiftKey &&
-      document.activeElement ===
-        last
+      document.activeElement === last
     ) {
 
       event.preventDefault();
@@ -658,18 +613,13 @@ async function loadPublicConfig() {
       await fetch(
         "/api/config",
         {
-          cache:
-            "no-store",
-
-          credentials:
-            "same-origin"
+          cache: "no-store",
+          credentials: "same-origin"
         }
       );
 
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
 
       throw new Error(
         "Could not load configuration."
@@ -683,8 +633,7 @@ async function loadPublicConfig() {
 
 
     macOSOnly =
-      config.macosOnly ===
-      true;
+      config.macosOnly === true;
 
   }
 
@@ -694,7 +643,6 @@ async function loadPublicConfig() {
       "Config load failed:",
       error
     );
-
 
     macOSOnly =
       true;
@@ -710,15 +658,12 @@ async function getPosts() {
     await fetch(
       "/posts/index.jsonl",
       {
-        cache:
-          "no-store"
+        cache: "no-store"
       }
     );
 
 
-  if (
-    !response.ok
-  ) {
+  if (!response.ok) {
 
     throw new Error(
       "Could not load writing."
@@ -741,37 +686,30 @@ async function getPosts() {
           line.trim()
       )
 
-      .filter(
-        Boolean
-      )
+      .filter(Boolean)
 
-      .map(
-        line => {
+      .map(line => {
 
-          try {
+        try {
 
-            return JSON.parse(
-              line
-            );
-
-          }
-
-          catch {
-
-            return null;
-
-          }
+          return JSON.parse(
+            line
+          );
 
         }
-      )
 
-      .filter(
-        Boolean
-      )
+        catch {
+
+          return null;
+
+        }
+
+      })
+
+      .filter(Boolean)
 
       .sort(
         (a, b) =>
-
           String(
             b.date || ""
           )
@@ -800,10 +738,10 @@ function renderPostList() {
   if (count) {
 
     count.textContent =
-      `${posts.length} ` +
-      `${posts.length === 1
-        ? "post"
-        : "posts"
+      `${posts.length} ${
+        posts.length === 1
+          ? "post"
+          : "posts"
       }`;
 
   }
@@ -814,9 +752,7 @@ function renderPostList() {
   }
 
 
-  if (
-    !posts.length
-  ) {
+  if (!posts.length) {
 
     list.innerHTML =
       '<div class="loading-card">' +
@@ -832,75 +768,80 @@ function renderPostList() {
     "";
 
 
-  posts.forEach(
-    post => {
+  posts.forEach(post => {
 
-      const button =
-        document.createElement(
-          "button"
-        );
-
-
-      button.className =
-        "post-item";
-
-      button.type =
-        "button";
-
-      button.dataset.file =
-        post.file || "";
+    const button =
+      document.createElement(
+        "button"
+      );
 
 
-      const readableDate =
-        formatDate(
-          post.date || ""
-        );
+    button.className =
+      "post-item";
+
+    button.type =
+      "button";
+
+    button.dataset.file =
+      post.file || "";
 
 
-      button.innerHTML = `
-        <strong>
+    const readableDate =
+      formatDate(
+        post.date || ""
+      );
+
+
+    button.innerHTML = `
+      <strong>
+        ${escapeHTML(
+          post.title ||
+          "Untitled"
+        )}
+      </strong>
+
+      <small>
+        <span>
           ${escapeHTML(
-            post.title ||
-            "Untitled"
+            post.author ||
+            "Unfuck AI"
           )}
-        </strong>
+        </span>
 
-        <small>
-          <span>
-            ${escapeHTML(
-              post.author ||
-              "Unfuck AI"
-            )}
-          </span>
-
-          ${
-            readableDate
-              ? `<span>·</span>
-                 <span>${escapeHTML(
-                   readableDate
-                 )}</span>`
-              : ""
-          }
-        </small>
-      `;
+        ${
+          readableDate
+            ? `
+              <span>·</span>
+              <span>
+                ${escapeHTML(
+                  readableDate
+                )}
+              </span>
+            `
+            : ""
+        }
+      </small>
+    `;
 
 
-      button.addEventListener(
-        "click",
-        () =>
-          openPost(
-            post,
-            true
-          )
-      );
+    button.addEventListener(
+      "click",
+      () => {
+
+        openPost(
+          post,
+          true
+        );
+
+      }
+    );
 
 
-      list.append(
-        button
-      );
+    list.append(
+      button
+    );
 
-    }
-  );
+  });
 
 }
 
@@ -920,17 +861,15 @@ async function openPost(
 
 
   $$(".post-item")
-    .forEach(
-      item => {
+    .forEach(item => {
 
-        item.classList.toggle(
-          "active",
-          item.dataset.file ===
-            post.file
-        );
+      item.classList.toggle(
+        "active",
+        item.dataset.file ===
+          post.file
+      );
 
-      }
-    );
+    });
 
 
   article.innerHTML =
@@ -947,15 +886,12 @@ async function openPost(
           post.file
         )}`,
         {
-          cache:
-            "no-store"
+          cache: "no-store"
         }
       );
 
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
 
       throw new Error(
         "Could not load post."
@@ -1021,13 +957,10 @@ async function openPost(
 
 
     $(".article-panel")
-      ?.scrollTo(
-        {
-          top: 0,
-          behavior:
-            "smooth"
-        }
-      );
+      ?.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
 
   }
 
@@ -1060,61 +993,55 @@ async function openReader(
   );
 
 
-  if (
-    !posts.length
-  ) {
+  if (!posts.length) {
 
     await loadPosts();
 
   }
 
 
-  if (
-    posts.length &&
-    !$(".post-item.active")
-  ) {
+  if (posts.length) {
 
-    await openPost(
-      posts[0],
-      false
-    );
+    const active =
+      $(".post-item.active");
+
+
+    if (!active) {
+
+      await openPost(
+        posts[0],
+        false
+      );
+
+    }
 
   }
 
 }
 
 
-[
-  "#open-reader",
-  "#hero-read",
-  "#latest-read",
-  "#footer-read"
-]
-.forEach(
-  selector => {
+function bindReaderButtons() {
 
-    const button =
-      $(selector);
+  $$("[data-open-reader]")
+    .forEach(button => {
 
+      button.addEventListener(
+        "click",
+        event => {
 
-    if (!button) {
-      return;
-    }
+          event.preventDefault();
 
 
-    button.addEventListener(
-      "click",
-      event => {
+          openReader(
+            event.currentTarget
+          );
 
-        openReader(
-          event.currentTarget
-        );
+        }
+      );
 
-      }
-    );
+    });
 
-  }
-);
+}
 
 
 function appearsToBeMac() {
@@ -1135,12 +1062,8 @@ function appearsToBeMac() {
 
 
   return (
-    platform.includes(
-      "mac"
-    ) ||
-    platform.includes(
-      "macintosh"
-    )
+    platform.includes("mac") ||
+    platform.includes("macintosh")
   );
 
 }
@@ -1154,21 +1077,14 @@ async function checkAuthentication() {
       await fetch(
         "/api/auth/status",
         {
-          credentials:
-            "same-origin",
-
-          cache:
-            "no-store"
+          credentials: "same-origin",
+          cache: "no-store"
         }
       );
 
 
-    if (
-      !response.ok
-    ) {
-
+    if (!response.ok) {
       return false;
-
     }
 
 
@@ -1177,8 +1093,7 @@ async function checkAuthentication() {
 
 
     return (
-      result.authenticated ===
-      true
+      result.authenticated === true
     );
 
   }
@@ -1203,14 +1118,9 @@ async function logoutWriter() {
     await fetch(
       "/api/logout",
       {
-        method:
-          "POST",
-
-        credentials:
-          "same-origin",
-
-        cache:
-          "no-store"
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store"
       }
     );
 
@@ -1304,17 +1214,24 @@ async function startWriting(
 }
 
 
-$("#open-write")
-  ?.addEventListener(
-    "click",
-    event => {
+function bindWriteButton() {
 
-      startWriting(
-        event.currentTarget
-      );
+  $("#open-write")
+    ?.addEventListener(
+      "click",
+      event => {
 
-    }
-  );
+        event.preventDefault();
+
+
+        startWriting(
+          event.currentTarget
+        );
+
+      }
+    );
+
+}
 
 
 $("#auth-form")
@@ -1332,8 +1249,7 @@ $("#auth-form")
         $("#auth-status");
 
       const button =
-        event
-          .currentTarget
+        event.currentTarget
           .querySelector(
             'button[type="submit"]'
           );
@@ -1385,8 +1301,7 @@ $("#auth-form")
           await fetch(
             "/api/auth",
             {
-              method:
-                "POST",
+              method: "POST",
 
               credentials:
                 "same-origin",
@@ -1397,27 +1312,27 @@ $("#auth-form")
               },
 
               body:
-                JSON.stringify(
-                  {
-                    phrase,
+                JSON.stringify({
+                  phrase,
 
-                    device: {
+                  device: {
 
-                      platform:
-                        navigator
-                          .userAgentData
-                          ?.platform ||
+                    platform:
+                      navigator
+                        .userAgentData
+                        ?.platform ||
 
-                        navigator.platform ||
+                      navigator.platform ||
 
-                        "",
+                      "",
 
-                      userAgent:
-                        navigator.userAgent ||
-                        ""
-                    }
+                    userAgent:
+                      navigator.userAgent ||
+                      ""
+
                   }
-                )
+
+                })
             }
           );
 
@@ -1458,9 +1373,7 @@ $("#auth-form")
           await checkAuthentication();
 
 
-        if (
-          !authenticated
-        ) {
+        if (!authenticated) {
 
           throw new Error(
             "Authentication session was not created."
@@ -1595,9 +1508,7 @@ function saveDraft() {
     Object.values(
       draft
     )
-    .some(
-      Boolean
-    );
+    .some(Boolean);
 
 
   const state =
@@ -1653,9 +1564,7 @@ function restoreDraft() {
     Object.values(
       draft
     )
-    .some(
-      Boolean
-    );
+    .some(Boolean);
 
 }
 
@@ -1680,9 +1589,7 @@ function updatePreview() {
           markdown
         )
 
-      : '<p style="opacity:.4">' +
-        "Preview will appear here." +
-        "</p>";
+      : "<p>Preview will appear here.</p>";
 
 }
 
@@ -1696,7 +1603,6 @@ editorFields.forEach(
         () => {
 
           saveDraft();
-
           updatePreview();
 
         }
@@ -1775,6 +1681,7 @@ async function openEditor() {
 
     const now =
       new Date();
+
 
     const localDate =
       new Date(
@@ -1932,6 +1839,7 @@ $("#publish-button")
             "open"
           );
 
+
           editorOverlay.setAttribute(
             "aria-hidden",
             "true"
@@ -1994,12 +1902,11 @@ $("#publish-button")
             ?.value
             .trim() ||
           ""
+
       };
 
 
-      if (
-        !payload.title
-      ) {
+      if (!payload.title) {
 
         showPublishStatus(
           "Add a title."
@@ -2010,9 +1917,7 @@ $("#publish-button")
       }
 
 
-      if (
-        !payload.author
-      ) {
+      if (!payload.author) {
 
         showPublishStatus(
           "Add an author."
@@ -2023,9 +1928,7 @@ $("#publish-button")
       }
 
 
-      if (
-        !payload.date
-      ) {
+      if (!payload.date) {
 
         showPublishStatus(
           "Add a date."
@@ -2052,9 +1955,7 @@ $("#publish-button")
       }
 
 
-      if (
-        !payload.markdown
-      ) {
+      if (!payload.markdown) {
 
         showPublishStatus(
           "Write something first."
@@ -2072,6 +1973,7 @@ $("#publish-button")
       button.disabled =
         true;
 
+
       button.textContent =
         "Publishing…";
 
@@ -2087,8 +1989,7 @@ $("#publish-button")
           await fetch(
             "/api/publish",
             {
-              method:
-                "POST",
+              method: "POST",
 
               credentials:
                 "same-origin",
@@ -2102,6 +2003,7 @@ $("#publish-button")
                 JSON.stringify(
                   payload
                 )
+
             }
           );
 
@@ -2126,8 +2028,7 @@ $("#publish-button")
 
 
         if (
-          response.status ===
-          401
+          response.status === 401
         ) {
 
           editorAuthenticated =
@@ -2143,6 +2044,7 @@ $("#publish-button")
             editorOverlay.classList.remove(
               "open"
             );
+
 
             editorOverlay.setAttribute(
               "aria-hidden",
@@ -2170,9 +2072,7 @@ $("#publish-button")
           );
 
 
-          throw new Error(
-            "Session expired."
-          );
+          return;
 
         }
 
@@ -2242,6 +2142,7 @@ $("#publish-button")
             "open"
           );
 
+
           editorOverlay.setAttribute(
             "aria-hidden",
             "true"
@@ -2284,6 +2185,7 @@ $("#publish-button")
 
         button.disabled =
           false;
+
 
         button.textContent =
           "Publish";
@@ -2334,11 +2236,21 @@ document.addEventListener(
   "DOMContentLoaded",
   async () => {
 
+    bindReaderButtons();
+
+    bindWriteButton();
+
+
     await loadPublicConfig();
+
 
     await logoutWriter();
 
+
     await loadPosts();
+
+
+    updatePreview();
 
 
     const match =
@@ -2366,6 +2278,7 @@ document.addEventListener(
       if (post) {
 
         await openReader();
+
 
         await openPost(
           post,
@@ -2421,8 +2334,7 @@ window.addEventListener(
     const post =
       posts.find(
         item =>
-          item.file ===
-          file
+          item.file === file
       );
 
 
