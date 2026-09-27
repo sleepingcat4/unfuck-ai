@@ -1,314 +1,648 @@
-const $ = selector => document.querySelector(selector);
-const $$ = selector => [...document.querySelectorAll(selector)];
+const $ = selector =>
+  document.querySelector(selector);
+
+const $$ = selector =>
+  [...document.querySelectorAll(selector)];
+
 
 let posts = [];
+
 let returnFocus = null;
+
 let editorDirty = false;
+
 let editorAuthenticated = false;
 
-const SITE_TITLE = "Unfuck AI";
-const DRAFT_KEY = "IKEWL-WAHAS-AJKAD-WAKLL";
+let macOSOnly = true;
 
 
-/* ============================================================
-   UTILITIES
-   ============================================================ */
+const SITE_TITLE =
+  "Unfuck AI";
 
-const escapeHTML = (value = "") =>
-  String(value).replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  })[char]);
+const DRAFT_KEY =
+  "IKEWL-WAHAS-AJKAD-WAKLL";
 
 
-const slugify = (value = "") =>
+const escapeHTML = (
+  value = ""
+) =>
+  String(value).replace(
+    /[&<>"']/g,
+    character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    })[character]
+  );
+
+
+const slugify = (
+  value = ""
+) =>
   String(value)
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(
+      /[^a-z0-9]+/g,
+      "-"
+    )
+    .replace(
+      /^-+|-+$/g,
+      ""
+    );
 
 
-/* ============================================================
-   MARKDOWN
-   ============================================================ */
+function formatDate(
+  value = ""
+) {
 
-function inlineMarkdown(text = "") {
+  if (!value) {
+    return "";
+  }
+
+  const date =
+    new Date(
+      `${value}T00:00:00`
+    );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return value;
+  }
+
+  return date.toLocaleDateString(
+    "en-GB",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    }
+  );
+
+}
+
+
+function inlineMarkdown(
+  text = ""
+) {
+
   return escapeHTML(text)
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+
+    .replace(
+      /`([^`]+)`/g,
+      "<code>$1</code>"
+    )
+
+    .replace(
+      /\*\*([^*]+)\*\*/g,
+      "<strong>$1</strong>"
+    )
+
+    .replace(
+      /\*([^*]+)\*/g,
+      "<em>$1</em>"
+    )
+
     .replace(
       /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
       '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
     );
+
 }
 
 
-function renderMarkdown(source = "") {
-  const lines = String(source)
-    .replace(/\r/g, "")
-    .split("\n");
+function renderMarkdown(
+  source = ""
+) {
+
+  const lines =
+    String(source)
+      .replace(/\r/g, "")
+      .split("\n");
+
 
   let html = "";
+
   let paragraph = [];
+
   let listType = "";
+
   let inCode = false;
+
   let codeLines = [];
 
-  const flushParagraph = () => {
-    if (!paragraph.length) return;
 
-    html += `<p>${inlineMarkdown(paragraph.join(" "))}</p>`;
+  const flushParagraph = () => {
+
+    if (!paragraph.length) {
+      return;
+    }
+
+    html +=
+      `<p>${inlineMarkdown(
+        paragraph.join(" ")
+      )}</p>`;
+
     paragraph = [];
+
   };
+
 
   const closeList = () => {
-    if (!listType) return;
 
-    html += `</${listType}>`;
+    if (!listType) {
+      return;
+    }
+
+    html +=
+      `</${listType}>`;
+
     listType = "";
+
   };
 
-  for (const line of lines) {
-    if (line.startsWith("```")) {
+
+  for (
+    const line of lines
+  ) {
+
+    if (
+      line.startsWith("```")
+    ) {
+
       flushParagraph();
+
       closeList();
+
 
       if (inCode) {
-        html += `<pre><code>${escapeHTML(
-          codeLines.join("\n")
-        )}</code></pre>`;
+
+        html +=
+          `<pre><code>${escapeHTML(
+            codeLines.join("\n")
+          )}</code></pre>`;
 
         codeLines = [];
+
       }
 
-      inCode = !inCode;
+
+      inCode =
+        !inCode;
+
       continue;
+
     }
+
 
     if (inCode) {
-      codeLines.push(line);
+
+      codeLines.push(
+        line
+      );
+
       continue;
+
     }
 
-    if (!line.trim()) {
+
+    if (
+      !line.trim()
+    ) {
+
       flushParagraph();
+
       closeList();
+
       continue;
+
     }
 
-    const heading = line.match(/^(#{1,3})\s+(.+)/);
+
+    const heading =
+      line.match(
+        /^(#{1,3})\s+(.+)/
+      );
+
 
     if (heading) {
+
       flushParagraph();
+
       closeList();
 
-      const level = heading[1].length;
 
-      html += `<h${level}>${inlineMarkdown(
-        heading[2]
-      )}</h${level}>`;
+      const level =
+        heading[1].length;
+
+
+      html +=
+        `<h${level}>${inlineMarkdown(
+          heading[2]
+        )}</h${level}>`;
 
       continue;
+
     }
 
-    if (/^---+$/.test(line.trim())) {
+
+    if (
+      /^---+$/.test(
+        line.trim()
+      )
+    ) {
+
       flushParagraph();
+
       closeList();
 
-      html += "<hr>";
+      html +=
+        "<hr>";
+
       continue;
+
     }
 
-    if (line.startsWith("> ")) {
+
+    if (
+      line.startsWith("> ")
+    ) {
+
       flushParagraph();
+
       closeList();
 
-      html += `<blockquote>${inlineMarkdown(
-        line.slice(2)
-      )}</blockquote>`;
+
+      html +=
+        `<blockquote>${inlineMarkdown(
+          line.slice(2)
+        )}</blockquote>`;
 
       continue;
+
     }
 
-    const unordered = line.match(/^[-*]\s+(.+)/);
-    const ordered = line.match(/^\d+\.\s+(.+)/);
 
-    if (unordered || ordered) {
+    const unordered =
+      line.match(
+        /^[-*]\s+(.+)/
+      );
+
+    const ordered =
+      line.match(
+        /^\d+\.\s+(.+)/
+      );
+
+
+    if (
+      unordered ||
+      ordered
+    ) {
+
       flushParagraph();
 
-      const type = unordered ? "ul" : "ol";
 
-      if (listType !== type) {
+      const type =
+        unordered
+          ? "ul"
+          : "ol";
+
+
+      if (
+        listType !== type
+      ) {
+
         closeList();
-        html += `<${type}>`;
-        listType = type;
+
+        html +=
+          `<${type}>`;
+
+        listType =
+          type;
+
       }
 
-      html += `<li>${inlineMarkdown(
-        (unordered || ordered)[1]
-      )}</li>`;
+
+      html +=
+        `<li>${inlineMarkdown(
+          (
+            unordered ||
+            ordered
+          )[1]
+        )}</li>`;
 
       continue;
+
     }
 
-    paragraph.push(line.trim());
+
+    paragraph.push(
+      line.trim()
+    );
+
   }
+
 
   flushParagraph();
+
   closeList();
 
+
   if (inCode) {
-    html += `<pre><code>${escapeHTML(
-      codeLines.join("\n")
-    )}</code></pre>`;
+
+    html +=
+      `<pre><code>${escapeHTML(
+        codeLines.join("\n")
+      )}</code></pre>`;
+
   }
 
+
   return html;
+
 }
 
-
-/* ============================================================
-   OVERLAYS
-   ============================================================ */
 
 function openOverlay(
   id,
-  trigger = document.activeElement
+  trigger =
+    document.activeElement
 ) {
-  const overlay = document.getElementById(id);
 
-  if (!overlay) return;
-
-  returnFocus = trigger;
-
-  $$(".overlay.open").forEach(item => {
-    if (item.id !== id) {
-      item.classList.remove("open");
-      item.setAttribute("aria-hidden", "true");
-    }
-  });
-
-  overlay.classList.add("open");
-  overlay.setAttribute("aria-hidden", "false");
-
-  if (id === "reader-overlay") {
-    $$("[data-open-reader]").forEach(button => {
-      button.setAttribute("aria-expanded", "true");
-    });
-  }
-
-  document.body.classList.add("modal-open");
-
-  setTimeout(() => {
-    overlay
-      .querySelector("button,input,textarea")
-      ?.focus();
-  }, 30);
-}
+  const overlay =
+    document.getElementById(
+      id
+    );
 
 
-async function closeOverlay(id) {
-  const overlay = document.getElementById(id);
-
-  if (!overlay) return;
-
-  overlay.classList.remove("open");
-  overlay.setAttribute("aria-hidden", "true");
-
-  /*
-   * Closing the editor also logs the writer out.
-   */
-  if (id === "editor-overlay") {
-    await logoutWriter();
-  }
-
-  if (id === "reader-overlay") {
-    $$("[data-open-reader]").forEach(button => {
-      button.setAttribute("aria-expanded", "false");
-    });
-
-    if (location.hash.startsWith("#read=")) {
-      history.replaceState(
-        null,
-        "",
-        location.pathname + location.search
-      );
-    }
-
-    document.title = SITE_TITLE;
-  }
-
-  if (!$(".overlay.open")) {
-    document.body.classList.remove("modal-open");
-  }
-
-  returnFocus?.focus?.();
-}
-
-
-$$("[data-close]").forEach(button => {
-  button.addEventListener("click", () => {
-    closeOverlay(button.dataset.close);
-  });
-});
-
-
-document.addEventListener("keydown", event => {
-  const open = $$(".overlay.open").at(-1);
-
-  if (!open) return;
-
-  if (event.key === "Escape") {
-    closeOverlay(open.id);
+  if (!overlay) {
     return;
   }
 
-  if (event.key !== "Tab") return;
 
-  const focusable = $$(
-    "button:not([disabled])," +
-    "input:not([disabled])," +
-    "textarea:not([disabled])," +
-    "a[href]"
-  ).filter(element =>
-    open.contains(element) &&
-    element.offsetParent !== null
+  returnFocus =
+    trigger;
+
+
+  $$(".overlay.open")
+    .forEach(
+      item => {
+
+        if (
+          item.id !== id
+        ) {
+
+          item.classList.remove(
+            "open"
+          );
+
+          item.setAttribute(
+            "aria-hidden",
+            "true"
+          );
+
+        }
+
+      }
+    );
+
+
+  overlay.classList.add(
+    "open"
   );
 
-  if (!focusable.length) return;
+  overlay.setAttribute(
+    "aria-hidden",
+    "false"
+  );
 
-  const first = focusable[0];
-  const last = focusable.at(-1);
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+
+  setTimeout(
+    () => {
+
+      overlay
+        .querySelector(
+          "button,input,textarea"
+        )
+        ?.focus();
+
+    },
+    30
+  );
+
+}
+
+
+async function closeOverlay(
+  id
+) {
+
+  const overlay =
+    document.getElementById(
+      id
+    );
+
+
+  if (!overlay) {
+    return;
+  }
+
+
+  overlay.classList.remove(
+    "open"
+  );
+
+  overlay.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
 
   if (
-    event.shiftKey &&
-    document.activeElement === first
+    id === "editor-overlay"
   ) {
-    event.preventDefault();
-    last.focus();
 
-  } else if (
-    !event.shiftKey &&
-    document.activeElement === last
-  ) {
-    event.preventDefault();
-    first.focus();
+    await logoutWriter();
+
   }
-});
+
+
+  if (
+    id === "reader-overlay"
+  ) {
+
+    if (
+      location.hash.startsWith(
+        "#read="
+      )
+    ) {
+
+      history.replaceState(
+        null,
+        "",
+        location.pathname +
+        location.search
+      );
+
+    }
+
+
+    document.title =
+      SITE_TITLE;
+
+  }
+
+
+  if (
+    !$(".overlay.open")
+  ) {
+
+    document.body.classList.remove(
+      "modal-open"
+    );
+
+  }
+
+
+  returnFocus
+    ?.focus
+    ?.();
+
+}
+
+
+$$("[data-close]")
+  .forEach(
+    button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          closeOverlay(
+            button.dataset.close
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    const open =
+      $$(".overlay.open")
+        .at(-1);
+
+
+    if (!open) {
+      return;
+    }
+
+
+    if (
+      event.key === "Escape"
+    ) {
+
+      closeOverlay(
+        open.id
+      );
+
+      return;
+
+    }
+
+
+    if (
+      event.key !== "Tab"
+    ) {
+      return;
+    }
+
+
+    const focusable =
+      $$(
+        "button:not([disabled])," +
+        "input:not([disabled])," +
+        "textarea:not([disabled])," +
+        "a[href]"
+      )
+      .filter(
+        element =>
+          open.contains(
+            element
+          ) &&
+          element.offsetParent !==
+            null
+      );
+
+
+    if (
+      !focusable.length
+    ) {
+      return;
+    }
+
+
+    const first =
+      focusable[0];
+
+    const last =
+      focusable.at(-1);
+
+
+    if (
+      event.shiftKey &&
+      document.activeElement ===
+        first
+    ) {
+
+      event.preventDefault();
+
+      last.focus();
+
+    }
+
+    else if (
+      !event.shiftKey &&
+      document.activeElement ===
+        last
+    ) {
+
+      event.preventDefault();
+
+      first.focus();
+
+    }
+
+  }
+);
 
 
 window.addEventListener(
   "scroll",
   () => {
-    $(".nav")?.classList.toggle(
-      "scrolled",
-      scrollY > 40
-    );
+
+    $(".nav")
+      ?.classList.toggle(
+        "scrolled",
+        scrollY > 40
+      );
+
   },
   {
     passive: true
@@ -316,109 +650,258 @@ window.addEventListener(
 );
 
 
-/* ============================================================
-   POSTS
-   ============================================================ */
+async function loadPublicConfig() {
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/config",
+        {
+          cache:
+            "no-store",
+
+          credentials:
+            "same-origin"
+        }
+      );
+
+
+    if (
+      !response.ok
+    ) {
+
+      throw new Error(
+        "Could not load configuration."
+      );
+
+    }
+
+
+    const config =
+      await response.json();
+
+
+    macOSOnly =
+      config.macosOnly ===
+      true;
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Config load failed:",
+      error
+    );
+
+
+    macOSOnly =
+      true;
+
+  }
+
+}
+
 
 async function getPosts() {
-  const response = await fetch(
-    "/posts/index.jsonl",
-    {
-      cache: "no-store"
-    }
-  );
 
-  if (!response.ok) {
+  const response =
+    await fetch(
+      "/posts/index.jsonl",
+      {
+        cache:
+          "no-store"
+      }
+    );
+
+
+  if (
+    !response.ok
+  ) {
+
     throw new Error(
       "Could not load writing."
     );
+
   }
 
-  const text = await response.text();
 
-  posts = text
-    .split("\n")
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => {
-      try {
-        return JSON.parse(line);
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean)
-    .sort((a, b) =>
-      String(b.date || "")
-        .localeCompare(
-          String(a.date || "")
-        )
-    );
+  const text =
+    await response.text();
+
+
+  posts =
+    text
+
+      .split("\n")
+
+      .map(
+        line =>
+          line.trim()
+      )
+
+      .filter(
+        Boolean
+      )
+
+      .map(
+        line => {
+
+          try {
+
+            return JSON.parse(
+              line
+            );
+
+          }
+
+          catch {
+
+            return null;
+
+          }
+
+        }
+      )
+
+      .filter(
+        Boolean
+      )
+
+      .sort(
+        (a, b) =>
+
+          String(
+            b.date || ""
+          )
+          .localeCompare(
+            String(
+              a.date || ""
+            )
+          )
+      );
+
 
   return posts;
+
 }
 
 
 function renderPostList() {
-  const list = $("#post-list");
-  const count = $("#post-count");
+
+  const list =
+    $("#post-list");
+
+  const count =
+    $("#post-count");
+
 
   if (count) {
+
     count.textContent =
       `${posts.length} ` +
-      `${posts.length === 1 ? "post" : "posts"}`;
+      `${posts.length === 1
+        ? "post"
+        : "posts"
+      }`;
+
   }
 
-  if (!list) return;
 
-  if (!posts.length) {
+  if (!list) {
+    return;
+  }
+
+
+  if (
+    !posts.length
+  ) {
+
     list.innerHTML =
       '<div class="loading-card">' +
       "Nothing published yet." +
       "</div>";
 
     return;
+
   }
 
-  list.innerHTML = "";
 
-  posts.forEach(post => {
-    const button =
-      document.createElement("button");
+  list.innerHTML =
+    "";
 
-    button.className = "post-item";
-    button.type = "button";
-    button.dataset.file = post.file || "";
 
-    button.innerHTML = `
-      <small>
-        <span>
+  posts.forEach(
+    post => {
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+
+      button.className =
+        "post-item";
+
+      button.type =
+        "button";
+
+      button.dataset.file =
+        post.file || "";
+
+
+      const readableDate =
+        formatDate(
+          post.date || ""
+        );
+
+
+      button.innerHTML = `
+        <strong>
           ${escapeHTML(
-            post.author || "Unfuck AI"
+            post.title ||
+            "Untitled"
           )}
-        </span>
+        </strong>
 
-        <span>
-          ${escapeHTML(
-            post.date || ""
-          )}
-        </span>
-      </small>
+        <small>
+          <span>
+            ${escapeHTML(
+              post.author ||
+              "Unfuck AI"
+            )}
+          </span>
 
-      <strong>
-        ${escapeHTML(
-          post.title || "Untitled"
-        )}
-      </strong>
-    `;
+          ${
+            readableDate
+              ? `<span>·</span>
+                 <span>${escapeHTML(
+                   readableDate
+                 )}</span>`
+              : ""
+          }
+        </small>
+      `;
 
-    button.addEventListener(
-      "click",
-      () => openPost(post, true)
-    );
 
-    list.append(button);
-  });
+      button.addEventListener(
+        "click",
+        () =>
+          openPost(
+            post,
+            true
+          )
+      );
+
+
+      list.append(
+        button
+      );
+
+    }
+  );
+
 }
 
 
@@ -426,79 +909,106 @@ async function openPost(
   post,
   updateHash = true
 ) {
-  const article = $("#article");
 
-  if (!article) return;
+  const article =
+    $("#article");
 
-  $$(".post-item").forEach(item => {
-    item.classList.toggle(
-      "active",
-      item.dataset.file === post.file
+
+  if (!article) {
+    return;
+  }
+
+
+  $$(".post-item")
+    .forEach(
+      item => {
+
+        item.classList.toggle(
+          "active",
+          item.dataset.file ===
+            post.file
+        );
+
+      }
     );
-  });
+
 
   article.innerHTML =
     '<div class="empty-state">' +
     "Opening article…" +
     "</div>";
 
-  try {
-    const response = await fetch(
-      `/posts/${encodeURIComponent(
-        post.file
-      )}`,
-      {
-        cache: "no-store"
-      }
-    );
 
-    if (!response.ok) {
-      throw new Error(
-        "Could not load post"
+  try {
+
+    const response =
+      await fetch(
+        `/posts/${encodeURIComponent(
+          post.file
+        )}`,
+        {
+          cache:
+            "no-store"
+        }
       );
+
+
+    if (
+      !response.ok
+    ) {
+
+      throw new Error(
+        "Could not load post."
+      );
+
     }
+
 
     const markdown =
       await response.text();
 
-    article.innerHTML = `
-      <div class="article-type">
-        Writing /
-        ${escapeHTML(
-          (post.file || "")
-            .replace(/\.md$/i, "")
-        )}
-      </div>
 
+    article.innerHTML = `
       <h1 class="article-title">
         ${escapeHTML(
-          post.title || "Untitled"
+          post.title ||
+          "Untitled"
         )}
       </h1>
 
       <div class="article-meta">
         <span>
           ${escapeHTML(
-            post.author || "Unfuck AI"
+            post.author ||
+            "Unfuck AI"
           )}
         </span>
 
         <span>
           ${escapeHTML(
-            post.date || ""
+            formatDate(
+              post.date || ""
+            )
           )}
         </span>
       </div>
 
       <div class="prose">
-        ${renderMarkdown(markdown)}
+        ${renderMarkdown(
+          markdown
+        )}
       </div>
     `;
 
+
     document.title =
-      `${post.title || "Untitled"} — ${SITE_TITLE}`;
+      `${post.title ||
+        "Untitled"
+      } — ${SITE_TITLE}`;
+
 
     if (updateHash) {
+
       history.pushState(
         null,
         "",
@@ -506,179 +1016,249 @@ async function openPost(
           post.file
         )}`
       );
+
     }
 
-    $(".article-panel")?.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
 
-  } catch (error) {
+    $(".article-panel")
+      ?.scrollTo(
+        {
+          top: 0,
+          behavior:
+            "smooth"
+        }
+      );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Post load failed:",
+      error
+    );
+
+
     article.innerHTML =
       '<div class="empty-state">' +
-      "This article failed to load. " +
-      "Try another one." +
+      "This article failed to load." +
       "</div>";
+
   }
+
 }
 
 
-/* ============================================================
-   READER
-   ============================================================ */
-
 async function openReader(
-  trigger = document.activeElement
+  trigger =
+    document.activeElement
 ) {
+
   openOverlay(
     "reader-overlay",
     trigger
   );
 
-  if (!posts.length) {
+
+  if (
+    !posts.length
+  ) {
+
     await loadPosts();
+
   }
+
 
   if (
     posts.length &&
     !$(".post-item.active")
   ) {
+
     await openPost(
       posts[0],
       false
     );
+
   }
+
 }
 
 
-/*
- * IMPORTANT:
- *
- * Not every data-open-reader button should open the reader.
- *
- * "Read" opens the reader.
- *
- * Buttons labelled "Writing" open authentication instead.
- */
-$$("[data-open-reader]").forEach(button => {
-  const label =
-    button.textContent
-      .trim()
-      .toLowerCase();
+[
+  "#open-reader",
+  "#hero-read",
+  "#latest-read",
+  "#footer-read"
+]
+.forEach(
+  selector => {
 
-  if (label.startsWith("writing")) {
+    const button =
+      $(selector);
+
+
+    if (!button) {
+      return;
+    }
+
+
     button.addEventListener(
       "click",
       event => {
-        startWriting(
+
+        openReader(
           event.currentTarget
         );
+
       }
     );
 
-    return;
   }
+);
 
-  button.addEventListener(
-    "click",
-    () => openReader(button)
-  );
-});
-
-
-/* ============================================================
-   AUTH
-   ============================================================ */
 
 function appearsToBeMac() {
-  const platform = (
-    navigator.userAgentData?.platform ||
-    navigator.platform ||
-    navigator.userAgent ||
-    ""
-  ).toLowerCase();
 
-  return platform.includes("mac");
+  const platform =
+    (
+      navigator
+        .userAgentData
+        ?.platform ||
+
+      navigator.platform ||
+
+      navigator.userAgent ||
+
+      ""
+    )
+    .toLowerCase();
+
+
+  return (
+    platform.includes(
+      "mac"
+    ) ||
+    platform.includes(
+      "macintosh"
+    )
+  );
+
 }
 
 
 async function checkAuthentication() {
-  try {
-    const response = await fetch(
-      "/api/auth/status",
-      {
-        credentials: "same-origin",
-        cache: "no-store"
-      }
-    );
 
-    if (!response.ok) {
+  try {
+
+    const response =
+      await fetch(
+        "/api/auth/status",
+        {
+          credentials:
+            "same-origin",
+
+          cache:
+            "no-store"
+        }
+      );
+
+
+    if (
+      !response.ok
+    ) {
+
       return false;
+
     }
+
 
     const result =
       await response.json();
 
+
     return (
-      result.authenticated === true
+      result.authenticated ===
+      true
     );
 
-  } catch {
-    return false;
   }
+
+  catch {
+
+    return false;
+
+  }
+
 }
 
 
 async function logoutWriter() {
-  editorAuthenticated = false;
+
+  editorAuthenticated =
+    false;
+
 
   try {
+
     await fetch(
       "/api/logout",
       {
-        method: "POST",
-        credentials: "same-origin",
-        cache: "no-store"
+        method:
+          "POST",
+
+        credentials:
+          "same-origin",
+
+        cache:
+          "no-store"
       }
     );
 
-  } catch (error) {
+  }
+
+  catch (error) {
+
     console.error(
       "Writer logout failed:",
       error
     );
+
   }
+
 }
 
 
-/*
- * Single entry point for writing.
- *
- * Every Writing / Write button calls this.
- *
- * It destroys any previous session first,
- * therefore the publishing phrase is always required.
- */
 async function startWriting(
-  trigger = document.activeElement
+  trigger =
+    document.activeElement
 ) {
-  if (!appearsToBeMac()) {
+
+  if (
+    macOSOnly &&
+    !appearsToBeMac()
+  ) {
+
     alert(
       "Writing access is limited to macOS."
     );
 
     return;
+
   }
+
 
   if (trigger) {
-    trigger.disabled = true;
+
+    trigger.disabled =
+      true;
+
   }
 
+
   try {
-    /*
-     * Destroy any old authenticated session.
-     */
+
     await logoutWriter();
+
 
     const phraseInput =
       $("#auth-phrase");
@@ -686,168 +1266,270 @@ async function startWriting(
     const status =
       $("#auth-status");
 
+
     if (phraseInput) {
-      phraseInput.value = "";
+
+      phraseInput.value =
+        "";
+
     }
 
+
     if (status) {
-      status.textContent = "";
+
+      status.textContent =
+        "";
+
     }
+
 
     openOverlay(
       "auth-overlay",
       trigger
     );
 
-  } finally {
-    if (trigger) {
-      trigger.disabled = false;
-    }
   }
+
+  finally {
+
+    if (trigger) {
+
+      trigger.disabled =
+        false;
+
+    }
+
+  }
+
 }
 
 
-/*
- * Write button inside reader.
- */
-$("#open-write")?.addEventListener(
-  "click",
-  event => {
-    startWriting(
-      event.currentTarget
-    );
-  }
-);
+$("#open-write")
+  ?.addEventListener(
+    "click",
+    event => {
 
-
-/*
- * Authenticate using publishing phrase.
- */
-$("#auth-form")?.addEventListener(
-  "submit",
-  async event => {
-    event.preventDefault();
-
-    const input =
-      $("#auth-phrase");
-
-    const status =
-      $("#auth-status");
-
-    const button =
-      event.currentTarget
-        .querySelector(
-          'button[type="submit"]'
-        );
-
-    const phrase =
-      input.value.trim();
-
-    if (!phrase) {
-      status.textContent =
-        "Enter the publishing phrase.";
-
-      return;
-    }
-
-    status.textContent =
-      "Checking…";
-
-    button.disabled = true;
-
-    try {
-      /*
-       * Remove any previous session before
-       * creating the new authenticated one.
-       */
-      await logoutWriter();
-
-      const response = await fetch(
-        "/api/auth",
-        {
-          method: "POST",
-          credentials: "same-origin",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body: JSON.stringify({
-            phrase,
-
-            device: {
-              platform:
-                navigator
-                  .userAgentData
-                  ?.platform ||
-                navigator.platform ||
-                "",
-
-              userAgent:
-                navigator.userAgent ||
-                ""
-            }
-          })
-        }
+      startWriting(
+        event.currentTarget
       );
 
-      const result =
-        await response.json();
-
-      if (
-        !response.ok ||
-        !result.ok
-      ) {
-        throw new Error(
-          result.error ||
-          "Access denied."
-        );
-      }
-
-      /*
-       * Verify Flask actually created
-       * the authenticated session.
-       */
-      const authenticated =
-        await checkAuthentication();
-
-      if (!authenticated) {
-        throw new Error(
-          "Authentication session was not created."
-        );
-      }
-
-      editorAuthenticated = true;
-
-      input.value = "";
-      status.textContent = "";
-
-      await openEditor();
-
-    } catch (error) {
-      editorAuthenticated = false;
-
-      status.textContent =
-        error.message ||
-        "Authentication failed.";
-
-    } finally {
-      button.disabled = false;
     }
-  }
-);
+  );
 
 
-/* ============================================================
-   EDITOR
-   ============================================================ */
+$("#auth-form")
+  ?.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      const input =
+        $("#auth-phrase");
+
+      const status =
+        $("#auth-status");
+
+      const button =
+        event
+          .currentTarget
+          .querySelector(
+            'button[type="submit"]'
+          );
+
+
+      const phrase =
+        input
+          ?.value
+          .trim() ||
+        "";
+
+
+      if (!phrase) {
+
+        if (status) {
+
+          status.textContent =
+            "Enter the publishing phrase.";
+
+        }
+
+        return;
+
+      }
+
+
+      if (status) {
+
+        status.textContent =
+          "Checking…";
+
+      }
+
+
+      if (button) {
+
+        button.disabled =
+          true;
+
+      }
+
+
+      try {
+
+        await logoutWriter();
+
+
+        const response =
+          await fetch(
+            "/api/auth",
+            {
+              method:
+                "POST",
+
+              credentials:
+                "same-origin",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify(
+                  {
+                    phrase,
+
+                    device: {
+
+                      platform:
+                        navigator
+                          .userAgentData
+                          ?.platform ||
+
+                        navigator.platform ||
+
+                        "",
+
+                      userAgent:
+                        navigator.userAgent ||
+                        ""
+                    }
+                  }
+                )
+            }
+          );
+
+
+        let result;
+
+
+        try {
+
+          result =
+            await response.json();
+
+        }
+
+        catch {
+
+          throw new Error(
+            "Server returned an invalid response."
+          );
+
+        }
+
+
+        if (
+          !response.ok ||
+          !result.ok
+        ) {
+
+          throw new Error(
+            result.error ||
+            "Access denied."
+          );
+
+        }
+
+
+        const authenticated =
+          await checkAuthentication();
+
+
+        if (
+          !authenticated
+        ) {
+
+          throw new Error(
+            "Authentication session was not created."
+          );
+
+        }
+
+
+        editorAuthenticated =
+          true;
+
+
+        if (input) {
+
+          input.value =
+            "";
+
+        }
+
+
+        if (status) {
+
+          status.textContent =
+            "";
+
+        }
+
+
+        await openEditor();
+
+      }
+
+      catch (error) {
+
+        editorAuthenticated =
+          false;
+
+
+        if (status) {
+
+          status.textContent =
+            error.message ||
+            "Authentication failed.";
+
+        }
+
+      }
+
+      finally {
+
+        if (button) {
+
+          button.disabled =
+            false;
+
+        }
+
+      }
+
+    }
+  );
+
 
 const markdownEditor =
   $("#markdown-editor");
 
 const editorPreview =
   $("#editor-preview");
+
 
 const editorFields = [
   "#editor-title",
@@ -859,122 +1541,185 @@ const editorFields = [
 
 
 function readDraft() {
+
   try {
+
     return JSON.parse(
       localStorage.getItem(
         DRAFT_KEY
-      ) || "null"
+      ) ||
+      "null"
     );
 
-  } catch {
-    return null;
   }
+
+  catch {
+
+    return null;
+
+  }
+
 }
 
 
 function saveDraft() {
+
   const draft =
     Object.fromEntries(
       editorFields.map(
         selector => [
           selector,
-          $(selector)?.value || ""
+          $(selector)?.value ||
+          ""
         ]
       )
     );
 
+
   try {
+
     localStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify(draft)
+      JSON.stringify(
+        draft
+      )
     );
 
-  } catch {
-    /*
-     * Browser may disable local storage.
-     */
   }
 
+  catch {
+  }
+
+
   editorDirty =
-    Object.values(draft)
-      .some(Boolean);
+    Object.values(
+      draft
+    )
+    .some(
+      Boolean
+    );
+
 
   const state =
     $("#save-state");
 
+
   if (state) {
+
     state.textContent =
       editorDirty
         ? "Saved locally"
         : "Draft";
+
   }
+
 }
 
 
 function restoreDraft() {
-  const draft = readDraft();
 
-  if (!draft) return;
+  const draft =
+    readDraft();
 
-  editorFields.forEach(selector => {
-    const element =
-      $(selector);
 
-    if (
-      element &&
-      !element.value
-    ) {
-      element.value =
-        draft[selector] || "";
+  if (!draft) {
+    return;
+  }
+
+
+  editorFields.forEach(
+    selector => {
+
+      const element =
+        $(selector);
+
+
+      if (
+        element &&
+        !element.value
+      ) {
+
+        element.value =
+          draft[selector] ||
+          "";
+
+      }
+
     }
-  });
+  );
+
 
   editorDirty =
-    Object.values(draft)
-      .some(Boolean);
+    Object.values(
+      draft
+    )
+    .some(
+      Boolean
+    );
+
 }
 
 
 function updatePreview() {
-  const markdown =
-    markdownEditor?.value || "";
 
-  if (!editorPreview) return;
+  const markdown =
+    markdownEditor
+      ?.value ||
+    "";
+
+
+  if (!editorPreview) {
+    return;
+  }
+
 
   editorPreview.innerHTML =
     markdown.trim()
-      ? renderMarkdown(markdown)
+
+      ? renderMarkdown(
+          markdown
+        )
+
       : '<p style="opacity:.4">' +
         "Preview will appear here." +
         "</p>";
+
 }
 
 
-editorFields.forEach(selector => {
-  $(selector)?.addEventListener(
-    "input",
-    () => {
-      saveDraft();
-      updatePreview();
-    }
-  );
-});
+editorFields.forEach(
+  selector => {
+
+    $(selector)
+      ?.addEventListener(
+        "input",
+        () => {
+
+          saveDraft();
+
+          updatePreview();
+
+        }
+      );
+
+  }
+);
 
 
-/*
- * Even if somebody manually executes
- * openEditor() from DevTools, the server
- * session still has to be authenticated.
- */
 async function openEditor() {
+
   const authenticated =
     await checkAuthentication();
+
 
   if (
     !authenticated ||
     !editorAuthenticated
   ) {
-    editorAuthenticated = false;
+
+    editorAuthenticated =
+      false;
+
 
     const input =
       $("#auth-phrase");
@@ -982,504 +1727,718 @@ async function openEditor() {
     const status =
       $("#auth-status");
 
+
     if (input) {
-      input.value = "";
+
+      input.value =
+        "";
+
     }
 
+
     if (status) {
+
       status.textContent =
         "Enter the publishing phrase.";
+
     }
+
 
     openOverlay(
       "auth-overlay",
       $("#open-write")
     );
 
+
     return;
+
   }
+
 
   openOverlay(
     "editor-overlay",
     $("#open-write")
   );
 
+
   restoreDraft();
+
 
   const date =
     $("#editor-date");
+
 
   if (
     date &&
     !date.value
   ) {
+
+    const now =
+      new Date();
+
+    const localDate =
+      new Date(
+        now.getTime() -
+        now.getTimezoneOffset() *
+        60000
+      );
+
+
     date.value =
-      new Date()
+      localDate
         .toISOString()
-        .slice(0, 10);
+        .slice(
+          0,
+          10
+        );
+
   }
+
 
   updatePreview();
 
+
   setTimeout(
     () => {
+
       $("#editor-title")
         ?.focus();
+
     },
     40
   );
+
 }
 
 
-/* ============================================================
-   EDITOR FILENAME
-   ============================================================ */
+$("#editor-title")
+  ?.addEventListener(
+    "input",
+    event => {
 
-$("#editor-title")?.addEventListener(
-  "input",
-  event => {
-    const file =
-      $("#editor-file");
+      const file =
+        $("#editor-file");
 
-    if (!file) return;
 
-    if (
-      file.dataset.manual ===
-      "true"
-    ) {
-      return;
+      if (!file) {
+        return;
+      }
+
+
+      if (
+        file.dataset.manual ===
+        "true"
+      ) {
+
+        return;
+
+      }
+
+
+      const slug =
+        slugify(
+          event.target.value
+        );
+
+
+      file.value =
+        slug
+          ? `${slug}.md`
+          : "";
+
     }
-
-    const slug =
-      slugify(
-        event.target.value
-      );
-
-    file.value =
-      slug
-        ? `${slug}.md`
-        : "";
-  }
-);
+  );
 
 
-$("#editor-file")?.addEventListener(
-  "input",
-  event => {
-    event.target.dataset.manual =
-      "true";
-  }
-);
+$("#editor-file")
+  ?.addEventListener(
+    "input",
+    event => {
+
+      event.target.dataset.manual =
+        "true";
+
+    }
+  );
 
 
-/* ============================================================
-   PUBLISH STATUS
-   ============================================================ */
+function showPublishStatus(
+  message
+) {
 
-function showPublishStatus(message) {
   const element =
     $("#publish-status");
 
-  if (!element) return;
+
+  if (!element) {
+    return;
+  }
+
 
   element.textContent =
     message;
+
 
   element.classList.add(
     "visible"
   );
 
+
   clearTimeout(
     showPublishStatus.timer
   );
 
+
   showPublishStatus.timer =
     setTimeout(
       () => {
+
         element.classList.remove(
           "visible"
         );
+
       },
       3000
     );
+
 }
 
 
-/* ============================================================
-   PUBLISH
-   ============================================================ */
+$("#publish-button")
+  ?.addEventListener(
+    "click",
+    async event => {
 
-$("#publish-button")?.addEventListener(
-  "click",
-  async event => {
-    /*
-     * Check Flask authentication again
-     * immediately before publishing.
-     */
-    const authenticated =
-      await checkAuthentication();
+      const authenticated =
+        await checkAuthentication();
 
-    if (
-      !authenticated ||
-      !editorAuthenticated
-    ) {
-      editorAuthenticated = false;
-
-      await closeOverlay(
-        "editor-overlay"
-      );
-
-      const status =
-        $("#auth-status");
-
-      if (status) {
-        status.textContent =
-          "Authentication required.";
-      }
-
-      openOverlay(
-        "auth-overlay",
-        event.currentTarget
-      );
-
-      return;
-    }
-
-    const payload = {
-      title:
-        $("#editor-title")
-          .value
-          .trim(),
-
-      author:
-        $("#editor-author")
-          .value
-          .trim(),
-
-      date:
-        $("#editor-date")
-          .value
-          .trim(),
-
-      file:
-        $("#editor-file")
-          .value
-          .trim(),
-
-      markdown:
-        markdownEditor
-          .value
-          .trim()
-    };
-
-    if (!payload.title) {
-      return showPublishStatus(
-        "Add a title."
-      );
-    }
-
-    if (!payload.author) {
-      return showPublishStatus(
-        "Add an author."
-      );
-    }
-
-    if (!payload.date) {
-      return showPublishStatus(
-        "Add a date."
-      );
-    }
-
-    if (
-      !/^[A-Za-z0-9_-]+\.md$/
-        .test(payload.file)
-    ) {
-      return showPublishStatus(
-        "Use a filename like article-name.md."
-      );
-    }
-
-    if (!payload.markdown) {
-      return showPublishStatus(
-        "Write something first."
-      );
-    }
-
-    const button =
-      event.currentTarget;
-
-    button.disabled = true;
-    button.textContent =
-      "Publishing…";
-
-    showPublishStatus(
-      "Publishing…"
-    );
-
-    try {
-      const response = await fetch(
-        "/api/publish",
-        {
-          method: "POST",
-          credentials: "same-origin",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify(
-              payload
-            )
-        }
-      );
-
-      const result =
-        await response.json();
 
       if (
-        response.status === 401
+        !authenticated ||
+        !editorAuthenticated
       ) {
+
         editorAuthenticated =
           false;
 
-        await closeOverlay(
-          "editor-overlay"
-        );
+
+        const editorOverlay =
+          $("#editor-overlay");
+
+
+        if (editorOverlay) {
+
+          editorOverlay.classList.remove(
+            "open"
+          );
+
+          editorOverlay.setAttribute(
+            "aria-hidden",
+            "true"
+          );
+
+        }
+
 
         const status =
           $("#auth-status");
 
+
         if (status) {
+
           status.textContent =
-            "Session expired. " +
-            "Enter the publishing phrase again.";
+            "Authentication required.";
+
         }
+
 
         openOverlay(
           "auth-overlay",
+          event.currentTarget
+        );
+
+
+        return;
+
+      }
+
+
+      const payload = {
+
+        title:
+          $("#editor-title")
+            ?.value
+            .trim() ||
+          "",
+
+        author:
+          $("#editor-author")
+            ?.value
+            .trim() ||
+          "",
+
+        date:
+          $("#editor-date")
+            ?.value
+            .trim() ||
+          "",
+
+        file:
+          $("#editor-file")
+            ?.value
+            .trim() ||
+          "",
+
+        markdown:
+          markdownEditor
+            ?.value
+            .trim() ||
+          ""
+      };
+
+
+      if (
+        !payload.title
+      ) {
+
+        showPublishStatus(
+          "Add a title."
+        );
+
+        return;
+
+      }
+
+
+      if (
+        !payload.author
+      ) {
+
+        showPublishStatus(
+          "Add an author."
+        );
+
+        return;
+
+      }
+
+
+      if (
+        !payload.date
+      ) {
+
+        showPublishStatus(
+          "Add a date."
+        );
+
+        return;
+
+      }
+
+
+      if (
+        !/^[A-Za-z0-9_-]+\.md$/
+          .test(
+            payload.file
+          )
+      ) {
+
+        showPublishStatus(
+          "Use a filename like article-name.md."
+        );
+
+        return;
+
+      }
+
+
+      if (
+        !payload.markdown
+      ) {
+
+        showPublishStatus(
+          "Write something first."
+        );
+
+        return;
+
+      }
+
+
+      const button =
+        event.currentTarget;
+
+
+      button.disabled =
+        true;
+
+      button.textContent =
+        "Publishing…";
+
+
+      showPublishStatus(
+        "Publishing…"
+      );
+
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/publish",
+            {
+              method:
+                "POST",
+
+              credentials:
+                "same-origin",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify(
+                  payload
+                )
+            }
+          );
+
+
+        let result;
+
+
+        try {
+
+          result =
+            await response.json();
+
+        }
+
+        catch {
+
+          throw new Error(
+            "Server returned an invalid response."
+          );
+
+        }
+
+
+        if (
+          response.status ===
+          401
+        ) {
+
+          editorAuthenticated =
+            false;
+
+
+          const editorOverlay =
+            $("#editor-overlay");
+
+
+          if (editorOverlay) {
+
+            editorOverlay.classList.remove(
+              "open"
+            );
+
+            editorOverlay.setAttribute(
+              "aria-hidden",
+              "true"
+            );
+
+          }
+
+
+          const status =
+            $("#auth-status");
+
+
+          if (status) {
+
+            status.textContent =
+              "Session expired. Enter the publishing phrase again.";
+
+          }
+
+
+          openOverlay(
+            "auth-overlay",
+            button
+          );
+
+
+          throw new Error(
+            "Session expired."
+          );
+
+        }
+
+
+        if (
+          !response.ok ||
+          !result.ok
+        ) {
+
+          throw new Error(
+            result.error ||
+            "Publishing failed."
+          );
+
+        }
+
+
+        const saveState =
+          $("#save-state");
+
+
+        if (saveState) {
+
+          saveState.textContent =
+            "Published";
+
+        }
+
+
+        editorDirty =
+          false;
+
+
+        try {
+
+          localStorage.removeItem(
+            DRAFT_KEY
+          );
+
+        }
+
+        catch {
+        }
+
+
+        await logoutWriter();
+
+
+        await loadPosts();
+
+
+        const published =
+          posts.find(
+            post =>
+              post.file ===
+              payload.file
+          );
+
+
+        const editorOverlay =
+          $("#editor-overlay");
+
+
+        if (editorOverlay) {
+
+          editorOverlay.classList.remove(
+            "open"
+          );
+
+          editorOverlay.setAttribute(
+            "aria-hidden",
+            "true"
+          );
+
+        }
+
+
+        document.body.classList.remove(
+          "modal-open"
+        );
+
+
+        await openReader(
           button
         );
 
-        throw new Error(
-          "Session expired."
-        );
+
+        if (published) {
+
+          await openPost(
+            published,
+            true
+          );
+
+        }
+
       }
 
-      if (
-        !response.ok ||
-        !result.ok
-      ) {
-        throw new Error(
-          result.error ||
+      catch (error) {
+
+        showPublishStatus(
+          error.message ||
           "Publishing failed."
         );
+
       }
 
-      const saveState =
-        $("#save-state");
+      finally {
 
-      if (saveState) {
-        saveState.textContent =
-          "Published";
+        button.disabled =
+          false;
+
+        button.textContent =
+          "Publish";
+
       }
 
-      editorDirty = false;
-
-      try {
-        localStorage.removeItem(
-          DRAFT_KEY
-        );
-      } catch {
-        /* no-op */
-      }
-
-      /*
-       * Publishing is complete.
-       *
-       * Kill the session immediately so
-       * writing again requires the phrase.
-       */
-      await logoutWriter();
-
-      await loadPosts();
-
-      const published =
-        posts.find(
-          post =>
-            post.file ===
-            payload.file
-        );
-
-      /*
-       * Remove editor manually.
-       *
-       * logoutWriter() was already called,
-       * so there's no need for another
-       * authentication lifecycle here.
-       */
-      const editorOverlay =
-        $("#editor-overlay");
-
-      if (editorOverlay) {
-        editorOverlay.classList.remove(
-          "open"
-        );
-
-        editorOverlay.setAttribute(
-          "aria-hidden",
-          "true"
-        );
-      }
-
-      await openReader(
-        button
-      );
-
-      if (published) {
-        await openPost(
-          published,
-          true
-        );
-      }
-
-    } catch (error) {
-      showPublishStatus(
-        error.message ||
-        "Publishing failed."
-      );
-
-    } finally {
-      button.disabled =
-        false;
-
-      button.textContent =
-        "Publish";
     }
-  }
-);
+  );
 
-
-/* ============================================================
-   LOAD POSTS
-   ============================================================ */
 
 async function loadPosts() {
+
   try {
+
     await getPosts();
+
     renderPostList();
 
-  } catch {
+  }
+
+  catch (error) {
+
+    console.error(
+      "Writing load failed:",
+      error
+    );
+
+
     const list =
       $("#post-list");
 
+
     if (list) {
+
       list.innerHTML =
         '<div class="loading-card">' +
         "Writing is unavailable right now." +
         "</div>";
+
     }
+
   }
+
 }
 
-
-/* ============================================================
-   INITIAL LOAD
-   ============================================================ */
 
 document.addEventListener(
   "DOMContentLoaded",
   async () => {
-    /*
-     * Destroy stale writer authentication
-     * whenever the page reloads.
-     */
+
+    await loadPublicConfig();
+
     await logoutWriter();
 
     await loadPosts();
 
-    /*
-     * Draft is intentionally NOT restored here.
-     * It only becomes visible after authentication.
-     */
 
     const match =
       location.hash.match(
         /^#read=(.+)$/
       );
 
+
     if (match) {
+
       const file =
         decodeURIComponent(
           match[1]
         );
 
+
       const post =
         posts.find(
           item =>
-            item.file === file
+            item.file ===
+            file
         );
 
+
       if (post) {
+
         await openReader();
 
         await openPost(
           post,
           false
         );
+
       }
+
     }
+
   }
 );
 
 
-/* ============================================================
-   HISTORY
-   ============================================================ */
-
 window.addEventListener(
   "popstate",
   async () => {
+
     const match =
       location.hash.match(
         /^#read=(.+)$/
       );
 
+
     if (!match) {
+
       if (
         $("#reader-overlay")
           ?.classList
-          .contains("open")
+          .contains(
+            "open"
+          )
       ) {
+
         await closeOverlay(
           "reader-overlay"
         );
+
       }
 
+
       return;
+
     }
+
 
     const file =
       decodeURIComponent(
         match[1]
       );
 
+
     const post =
       posts.find(
         item =>
-          item.file === file
+          item.file ===
+          file
       );
 
+
     if (post) {
+
       openOverlay(
         "reader-overlay"
       );
+
 
       await openPost(
         post,
         false
       );
+
     }
+
   }
 );

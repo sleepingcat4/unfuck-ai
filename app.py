@@ -2,6 +2,7 @@ import os
 import json
 import re
 import hmac
+
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -13,19 +14,12 @@ from flask import (
     send_from_directory,
     session,
 )
+
 from dotenv import load_dotenv
 
 
-# ============================================================
-# ENV
-# ============================================================
-
 load_dotenv()
 
-
-# ============================================================
-# APP
-# ============================================================
 
 app = Flask(__name__)
 
@@ -39,15 +33,11 @@ app.secret_key = os.environ.get(
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Strict",
-    SESSION_COOKIE_SECURE=False,  # set True when behind HTTPS
+    SESSION_COOKIE_SECURE=False,
     PERMANENT_SESSION_LIFETIME=timedelta(hours=2),
     MAX_CONTENT_LENGTH=1024 * 1024,
 )
 
-
-# ============================================================
-# PATHS
-# ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -66,14 +56,21 @@ if not INDEX_FILE.exists():
     INDEX_FILE.touch()
 
 
-# ============================================================
-# CONFIG
-# ============================================================
-
 PUBLISH_PHRASE = os.environ.get(
     "PUBLISH_PHRASE",
     ""
 )
+
+
+MACOS_ONLY = os.environ.get(
+    "MACOS_ONLY",
+    "true"
+).strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on"
+}
 
 
 SAFE_FILENAME = re.compile(
@@ -88,10 +85,6 @@ MAX_AUTHOR_LENGTH = 100
 MAX_MARKDOWN_LENGTH = 300_000
 
 
-# ============================================================
-# HELPERS
-# ============================================================
-
 def is_authenticated():
     return session.get(
         "writer_authenticated"
@@ -99,20 +92,24 @@ def is_authenticated():
 
 
 def is_mac_request():
+
     data = request.get_json(
         silent=True
     ) or {}
+
 
     device = data.get(
         "device",
         {}
     )
 
+
     if not isinstance(
         device,
         dict
     ):
         device = {}
+
 
     platform = str(
         device.get(
@@ -121,12 +118,14 @@ def is_mac_request():
         )
     ).lower()
 
+
     user_agent = str(
         device.get(
             "userAgent",
             ""
         )
     ).lower()
+
 
     return (
         "mac" in platform
@@ -136,6 +135,7 @@ def is_mac_request():
 
 
 def read_posts():
+
     posts = []
 
 
@@ -158,15 +158,18 @@ def read_posts():
 
 
             try:
+
                 post = json.loads(
                     line
                 )
+
 
                 posts.append(
                     post
                 )
 
             except json.JSONDecodeError as error:
+
                 print(
                     "Skipping invalid JSONL line:",
                     error
@@ -188,6 +191,7 @@ def read_posts():
 
 
 def write_posts(posts):
+
     with INDEX_FILE.open(
         "w",
         encoding="utf-8"
@@ -204,27 +208,19 @@ def write_posts(posts):
             )
 
 
-# ============================================================
-# MAIN PAGE
-# ============================================================
-
 @app.route("/")
 def index():
+
     return render_template(
         "index.html"
     )
 
 
-# ============================================================
-# POSTS INDEX
-# ============================================================
-
-@app.route(
-    "/posts/index.jsonl"
-)
+@app.route("/posts/index.jsonl")
 def posts_index():
 
     if not INDEX_FILE.exists():
+
         return "", 200, {
             "Content-Type":
                 "application/x-ndjson; charset=utf-8"
@@ -238,21 +234,17 @@ def posts_index():
     )
 
 
-# ============================================================
-# INDIVIDUAL POST
-# ============================================================
-
-@app.route(
-    "/posts/<filename>"
-)
+@app.route("/posts/<filename>")
 def get_post(filename):
 
     if not SAFE_FILENAME.fullmatch(
         filename
     ):
+
         return jsonify({
             "ok": False,
-            "error": "Invalid filename."
+            "error":
+                "Invalid filename."
         }), 400
 
 
@@ -260,9 +252,11 @@ def get_post(filename):
 
 
     if not target.exists():
+
         return jsonify({
             "ok": False,
-            "error": "Post not found."
+            "error":
+                "Post not found."
         }), 404
 
 
@@ -273,13 +267,16 @@ def get_post(filename):
     )
 
 
-# ============================================================
-# AUTH STATUS
-# ============================================================
+@app.get("/api/config")
+def public_config():
 
-@app.get(
-    "/api/auth/status"
-)
+    return jsonify({
+        "ok": True,
+        "macosOnly": MACOS_ONLY
+    })
+
+
+@app.get("/api/auth/status")
 def auth_status():
 
     return jsonify({
@@ -289,13 +286,7 @@ def auth_status():
     })
 
 
-# ============================================================
-# AUTH
-# ============================================================
-
-@app.post(
-    "/api/auth"
-)
+@app.post("/api/auth")
 def authenticate():
 
     data = request.get_json(
@@ -324,11 +315,11 @@ def authenticate():
         }), 500
 
 
-    # --------------------------------------------------------
-    # MAC CHECK
-    # --------------------------------------------------------
-
-    if not is_mac_request():
+    if (
+        MACOS_ONLY
+        and
+        not is_mac_request()
+    ):
 
         return jsonify({
             "ok": False,
@@ -336,10 +327,6 @@ def authenticate():
                 "Writing access is limited to macOS."
         }), 403
 
-
-    # --------------------------------------------------------
-    # PHRASE CHECK
-    # --------------------------------------------------------
 
     valid_phrase = hmac.compare_digest(
         phrase,
@@ -356,10 +343,6 @@ def authenticate():
         }), 403
 
 
-    # --------------------------------------------------------
-    # SESSION
-    # --------------------------------------------------------
-
     session.clear()
 
     session.permanent = True
@@ -375,13 +358,7 @@ def authenticate():
     })
 
 
-# ============================================================
-# LOGOUT
-# ============================================================
-
-@app.post(
-    "/api/logout"
-)
+@app.post("/api/logout")
 def logout():
 
     session.clear()
@@ -392,18 +369,8 @@ def logout():
     })
 
 
-# ============================================================
-# PUBLISH
-# ============================================================
-
-@app.post(
-    "/api/publish"
-)
+@app.post("/api/publish")
 def publish():
-
-    # --------------------------------------------------------
-    # AUTH
-    # --------------------------------------------------------
 
     if not is_authenticated():
 
@@ -413,10 +380,6 @@ def publish():
                 "Authentication required."
         }), 401
 
-
-    # --------------------------------------------------------
-    # DATA
-    # --------------------------------------------------------
 
     data = request.get_json(
         silent=True
@@ -463,10 +426,6 @@ def publish():
     )
 
 
-    # --------------------------------------------------------
-    # REQUIRED FIELDS
-    # --------------------------------------------------------
-
     if not title:
 
         return jsonify({
@@ -512,10 +471,6 @@ def publish():
         }), 400
 
 
-    # --------------------------------------------------------
-    # LENGTH CHECKS
-    # --------------------------------------------------------
-
     if len(title) > MAX_TITLE_LENGTH:
 
         return jsonify({
@@ -543,10 +498,6 @@ def publish():
         }), 413
 
 
-    # --------------------------------------------------------
-    # FILENAME CHECK
-    # --------------------------------------------------------
-
     if not SAFE_FILENAME.fullmatch(
         filename
     ):
@@ -557,10 +508,6 @@ def publish():
                 "Invalid filename."
         }), 400
 
-
-    # --------------------------------------------------------
-    # DATE CHECK
-    # --------------------------------------------------------
 
     try:
 
@@ -577,10 +524,6 @@ def publish():
                 "Date must use YYYY-MM-DD."
         }), 400
 
-
-    # --------------------------------------------------------
-    # SAFE PATH CHECK
-    # --------------------------------------------------------
 
     target = (
         POSTS_DIR / filename
@@ -600,10 +543,6 @@ def publish():
                 "Invalid post path."
         }), 400
 
-
-    # --------------------------------------------------------
-    # WRITE MARKDOWN FILE
-    # --------------------------------------------------------
 
     try:
 
@@ -625,10 +564,6 @@ def publish():
                 "Could not write post."
         }), 500
 
-
-    # --------------------------------------------------------
-    # UPDATE JSONL
-    # --------------------------------------------------------
 
     posts = read_posts()
 
@@ -703,13 +638,7 @@ def publish():
     })
 
 
-# ============================================================
-# DEBUG ROUTE
-# ============================================================
-
-@app.get(
-    "/api/debug/posts"
-)
+@app.get("/api/debug/posts")
 def debug_posts():
 
     return jsonify({
@@ -724,12 +653,11 @@ def debug_posts():
 
         "posts":
             read_posts(),
+
+        "macos_only":
+            MACOS_ONLY,
     })
 
-
-# ============================================================
-# SECURITY HEADERS
-# ============================================================
 
 @app.after_request
 def security_headers(response):
@@ -777,10 +705,6 @@ def security_headers(response):
 
     return response
 
-
-# ============================================================
-# ERROR HANDLERS
-# ============================================================
 
 @app.errorhandler(404)
 def not_found(error):
@@ -838,22 +762,25 @@ def server_error(error):
     )
 
 
-# ============================================================
-# RUN
-# ============================================================
-
 if __name__ == "__main__":
 
     print(
         f"Posts directory: {POSTS_DIR}"
     )
 
+
     print(
         f"Posts index: {INDEX_FILE}"
     )
 
+
     print(
         f"Publish phrase configured: {bool(PUBLISH_PHRASE)}"
+    )
+
+
+    print(
+        f"macOS-only writing: {MACOS_ONLY}"
     )
 
 
