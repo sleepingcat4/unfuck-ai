@@ -16,7 +16,7 @@
 
   <meta
     name="description"
-    content="Unfuck AI — critical writing on AI research, research culture, engineering projects, and hobbyist experiments."
+    content="Unfuck AI — technical writing on artificial intelligence research, algorithms, infrastructure, evaluation, and engineering."
   >
 
   <title>Unfuck AI</title>
@@ -29,7 +29,7 @@
 
   <link
     rel="stylesheet"
-    href="/static/style.css"
+    href="{{ url_for('static', filename='style.css') }}"
   >
 </head>
 
@@ -52,6 +52,7 @@
     >
       Unfuck AI
     </a>
+
 
     <button
       class="writing-button"
@@ -98,9 +99,9 @@
       <div class="hero-bottom">
 
         <p class="hero-copy">
-          technical and engineering write-ups explaining algorithms,
-          infrastructure and research papers related to artificial intelligence
-          similar to Russian Habr.
+          Technical and engineering write-ups explaining algorithms,
+          infrastructure, and research papers related to artificial
+          intelligence, similar in spirit to Russian Habr.
         </p>
 
 
@@ -108,7 +109,7 @@
           class="round-read"
           data-open-reader
           type="button"
-          aria-label="Open writing"
+          aria-label="Read published writing"
           aria-haspopup="dialog"
           aria-controls="reader-overlay"
           aria-expanded="false"
@@ -135,6 +136,7 @@
             What gets published
           </p>
 
+
           <h2>
             Well-thought<br>
             Commentary
@@ -146,10 +148,10 @@
         <div class="dispatch-copy">
 
           <p>
-            I write well-studied technical commentary on sub-field artificial
-            intelligence papers and share engineering projects that explore
-            internet scalability, handling terabytes of data and teaching
-            materials.
+            I write well-studied technical commentary on sub-field
+            artificial intelligence papers and share engineering projects
+            that explore internet scalability, handling terabytes of data,
+            algorithms, infrastructure, and teaching material.
           </p>
 
 
@@ -180,6 +182,7 @@
             01
           </span>
 
+
           <div>
 
             <h3>
@@ -187,7 +190,7 @@
             </h3>
 
             <p>
-              reading state-of-art research papers,
+              reading state-of-the-art research papers,
               infrastructure and algorithms
             </p>
 
@@ -202,6 +205,7 @@
             02
           </span>
 
+
           <div>
 
             <h3>
@@ -209,7 +213,8 @@
             </h3>
 
             <p>
-              why tf it works and how to break it
+              understand why it works, what assumptions it makes,
+              and where it breaks
             </p>
 
           </div>
@@ -223,6 +228,7 @@
             03
           </span>
 
+
           <div>
 
             <h3>
@@ -230,7 +236,8 @@
             </h3>
 
             <p>
-              be reviewer 2 with Area Chair vibe
+              turn technical scrutiny into useful research notes
+              and engineering explanations
             </p>
 
           </div>
@@ -247,13 +254,16 @@
       <div class="shell">
 
         <p>
-          Think of it as a research notebook with the social energy of Reddit
-          and the editorial restraint of people who have absolutely not slept
-          enough.
+          A public research notebook for examining influential work,
+          tracing ideas through the literature, and documenting the
+          engineering needed to test them.
         </p>
 
+
         <p class="statement-note">
-          AlexNet is the benchmark, everyone else should follow-thru
+          AlexNet remains a useful reference point for work that is
+          technically clear, empirically consequential, and difficult
+          for the field to ignore.
         </p>
 
       </div>
@@ -275,7 +285,7 @@
       <div>
 
         <p>
-          Criticism, Engineering and Journalism
+          Criticism, Engineering and Research
         </p>
 
 
@@ -291,11 +301,6 @@
 
       </div>
 
-    </div>
-
-
-    <div class="shell footer-bottom">
-      Made by Broken Mind
     </div>
 
   </footer>
@@ -329,7 +334,7 @@
           </strong>
 
           <span>
-            Writing
+            Reading
           </span>
 
         </div>
@@ -352,7 +357,7 @@
             class="close-button"
             data-close="reader-overlay"
             type="button"
-            aria-label="Close writing"
+            aria-label="Close reader"
           >
             ×
           </button>
@@ -372,7 +377,7 @@
           <div class="panel-heading">
 
             <span>
-              Choose something
+              Articles
             </span>
 
             <span id="post-count"></span>
@@ -528,6 +533,7 @@
             Editor
           </span>
 
+
           <span
             class="save-state"
             id="save-state"
@@ -579,6 +585,7 @@
           type="text"
           placeholder="Untitled argument"
           maxlength="200"
+          autocomplete="off"
         >
 
 
@@ -597,6 +604,7 @@
             type="text"
             placeholder="Author"
             maxlength="100"
+            autocomplete="off"
           >
 
 
@@ -626,6 +634,7 @@
             id="editor-file"
             type="text"
             placeholder="article-name.md"
+            autocomplete="off"
           >
 
         </div>
@@ -679,7 +688,9 @@
   </div>
 
 
-  <script src="/static/script.js"></script>
+  <script
+    src="{{ url_for('static', filename='script.js') }}"
+  ></script>
 
 </body>
 

@@ -2,6 +2,7 @@ import os
 import json
 import re
 import hmac
+import tempfile
 
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -21,24 +22,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-app = Flask(__name__)
-
-
-app.secret_key = os.environ.get(
-    "FLASK_SECRET_KEY",
-    os.urandom(32).hex()
-)
-
-
-app.config.update(
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Strict",
-    SESSION_COOKIE_SECURE=False,
-    PERMANENT_SESSION_LIFETIME=timedelta(hours=2),
-    MAX_CONTENT_LENGTH=1024 * 1024,
-)
-
-
 BASE_DIR = Path(__file__).resolve().parent
 
 POSTS_DIR = BASE_DIR / "posts"
@@ -48,7 +31,7 @@ INDEX_FILE = POSTS_DIR / "index.jsonl"
 
 POSTS_DIR.mkdir(
     parents=True,
-    exist_ok=True
+    exist_ok=True,
 )
 
 
@@ -56,20 +39,72 @@ if not INDEX_FILE.exists():
     INDEX_FILE.touch()
 
 
+app = Flask(__name__)
+
+
+FLASK_SECRET_KEY = os.environ.get(
+    "FLASK_SECRET_KEY",
+    "",
+).strip()
+
+
+if not FLASK_SECRET_KEY:
+
+    FLASK_SECRET_KEY = (
+        os.urandom(32).hex()
+    )
+
+    print(
+        "WARNING: FLASK_SECRET_KEY is not configured. "
+        "Sessions will be invalidated whenever the app restarts."
+    )
+
+
+app.secret_key = FLASK_SECRET_KEY
+
+
+IS_PRODUCTION = os.environ.get(
+    "FLASK_ENV",
+    "",
+).strip().lower() == "production"
+
+
+SESSION_COOKIE_SECURE = os.environ.get(
+    "SESSION_COOKIE_SECURE",
+    "true" if IS_PRODUCTION else "false",
+).strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Strict",
+    SESSION_COOKIE_SECURE=SESSION_COOKIE_SECURE,
+    PERMANENT_SESSION_LIFETIME=timedelta(
+        hours=2
+    ),
+    MAX_CONTENT_LENGTH=1024 * 1024,
+)
+
+
 PUBLISH_PHRASE = os.environ.get(
     "PUBLISH_PHRASE",
-    ""
+    "",
 )
 
 
 MACOS_ONLY = os.environ.get(
     "MACOS_ONLY",
-    "true"
+    "true",
 ).strip().lower() in {
     "1",
     "true",
     "yes",
-    "on"
+    "on",
 }
 
 
@@ -86,9 +121,13 @@ MAX_MARKDOWN_LENGTH = 300_000
 
 
 def is_authenticated():
-    return session.get(
-        "writer_authenticated"
-    ) is True
+
+    return (
+        session.get(
+            "writer_authenticated"
+        )
+        is True
+    )
 
 
 def is_mac_request():
@@ -100,21 +139,22 @@ def is_mac_request():
 
     device = data.get(
         "device",
-        {}
+        {},
     )
 
 
     if not isinstance(
         device,
-        dict
+        dict,
     ):
+
         device = {}
 
 
     platform = str(
         device.get(
             "platform",
-            ""
+            "",
         )
     ).lower()
 
@@ -122,7 +162,7 @@ def is_mac_request():
     user_agent = str(
         device.get(
             "userAgent",
-            ""
+            "",
         )
     ).lower()
 
@@ -134,56 +174,142 @@ def is_mac_request():
     )
 
 
+def normalize_post(post):
+
+    if not isinstance(
+        post,
+        dict,
+    ):
+
+        return None
+
+
+    title = str(
+        post.get(
+            "title",
+            "",
+        )
+    ).strip()
+
+
+    author = str(
+        post.get(
+            "author",
+            "",
+        )
+    ).strip()
+
+
+    date = str(
+        post.get(
+            "date",
+            "",
+        )
+    ).strip()
+
+
+    filename = str(
+        post.get(
+            "file",
+            "",
+        )
+    ).strip()
+
+
+    if not title:
+        return None
+
+
+    if not filename:
+        return None
+
+
+    if not SAFE_FILENAME.fullmatch(
+        filename
+    ):
+
+        return None
+
+
+    return {
+        "title": title,
+        "author": author,
+        "date": date,
+        "file": filename,
+    }
+
+
 def read_posts():
 
     posts = []
 
 
     if not INDEX_FILE.exists():
+
         return posts
 
 
-    with INDEX_FILE.open(
-        "r",
-        encoding="utf-8"
-    ) as file:
+    try:
 
-        for line in file:
+        with INDEX_FILE.open(
+            "r",
+            encoding="utf-8",
+        ) as file:
 
-            line = line.strip()
+            for line in file:
 
-
-            if not line:
-                continue
+                line = line.strip()
 
 
-            try:
+                if not line:
+                    continue
 
-                post = json.loads(
-                    line
+
+                try:
+
+                    raw_post = json.loads(
+                        line
+                    )
+
+                except json.JSONDecodeError as error:
+
+                    print(
+                        "Skipping invalid JSONL line:",
+                        error,
+                    )
+
+                    continue
+
+
+                post = normalize_post(
+                    raw_post
                 )
 
 
-                posts.append(
-                    post
-                )
+                if post is not None:
 
-            except json.JSONDecodeError as error:
+                    posts.append(
+                        post
+                    )
 
-                print(
-                    "Skipping invalid JSONL line:",
-                    error
-                )
+    except OSError as error:
+
+        print(
+            "Could not read posts index:",
+            error,
+        )
+
+        return []
 
 
     posts.sort(
         key=lambda post: str(
             post.get(
                 "date",
-                ""
+                "",
             )
         ),
-        reverse=True
+        reverse=True,
     )
 
 
@@ -192,23 +318,79 @@ def read_posts():
 
 def write_posts(posts):
 
-    with INDEX_FILE.open(
-        "w",
-        encoding="utf-8"
-    ) as file:
+    POSTS_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
-        for post in posts:
 
-            file.write(
-                json.dumps(
-                    post,
-                    ensure_ascii=False
+    temp_fd, temp_name = (
+        tempfile.mkstemp(
+            prefix="index-",
+            suffix=".jsonl.tmp",
+            dir=str(POSTS_DIR),
+        )
+    )
+
+
+    try:
+
+        with os.fdopen(
+            temp_fd,
+            "w",
+            encoding="utf-8",
+        ) as file:
+
+            for post in posts:
+
+                normalized = (
+                    normalize_post(
+                        post
+                    )
                 )
-                + "\n"
+
+
+                if normalized is None:
+                    continue
+
+
+                file.write(
+                    json.dumps(
+                        normalized,
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+
+
+            file.flush()
+
+            os.fsync(
+                file.fileno()
             )
 
 
-@app.route("/")
+        os.replace(
+            temp_name,
+            INDEX_FILE,
+        )
+
+    except Exception:
+
+        try:
+
+            os.unlink(
+                temp_name
+            )
+
+        except OSError:
+            pass
+
+
+        raise
+
+
+@app.get("/")
 def index():
 
     return render_template(
@@ -216,25 +398,19 @@ def index():
     )
 
 
-@app.route("/posts/index.jsonl")
-def posts_index():
+@app.get("/api/posts")
+def posts_api():
 
-    if not INDEX_FILE.exists():
-
-        return "", 200, {
-            "Content-Type":
-                "application/x-ndjson; charset=utf-8"
-        }
+    posts = read_posts()
 
 
-    return send_from_directory(
-        POSTS_DIR,
-        "index.jsonl",
-        mimetype="application/x-ndjson"
-    )
+    return jsonify({
+        "ok": True,
+        "posts": posts,
+    })
 
 
-@app.route("/posts/<filename>")
+@app.get("/posts/<filename>")
 def get_post(filename):
 
     if not SAFE_FILENAME.fullmatch(
@@ -244,289 +420,13 @@ def get_post(filename):
         return jsonify({
             "ok": False,
             "error":
-                "Invalid filename."
-        }), 400
-
-
-    target = POSTS_DIR / filename
-
-
-    if not target.exists():
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Post not found."
-        }), 404
-
-
-    return send_from_directory(
-        POSTS_DIR,
-        filename,
-        mimetype="text/markdown"
-    )
-
-
-@app.get("/api/config")
-def public_config():
-
-    return jsonify({
-        "ok": True,
-        "macosOnly": MACOS_ONLY
-    })
-
-
-@app.get("/api/auth/status")
-def auth_status():
-
-    return jsonify({
-        "ok": True,
-        "authenticated":
-            is_authenticated()
-    })
-
-
-@app.post("/api/auth")
-def authenticate():
-
-    data = request.get_json(
-        silent=True
-    ) or {}
-
-
-    phrase = str(
-        data.get(
-            "phrase",
-            ""
-        )
-    )
-
-
-    if not PUBLISH_PHRASE:
-
-        print(
-            "WARNING: PUBLISH_PHRASE is not configured."
-        )
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Server authentication is not configured."
-        }), 500
-
-
-    if (
-        MACOS_ONLY
-        and
-        not is_mac_request()
-    ):
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Writing access is limited to macOS."
-        }), 403
-
-
-    valid_phrase = hmac.compare_digest(
-        phrase,
-        PUBLISH_PHRASE
-    )
-
-
-    if not valid_phrase:
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Incorrect publishing phrase."
-        }), 403
-
-
-    session.clear()
-
-    session.permanent = True
-
-    session[
-        "writer_authenticated"
-    ] = True
-
-
-    return jsonify({
-        "ok": True,
-        "authenticated": True
-    })
-
-
-@app.post("/api/logout")
-def logout():
-
-    session.clear()
-
-
-    return jsonify({
-        "ok": True
-    })
-
-
-@app.post("/api/publish")
-def publish():
-
-    if not is_authenticated():
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Authentication required."
-        }), 401
-
-
-    data = request.get_json(
-        silent=True
-    ) or {}
-
-
-    title = str(
-        data.get(
-            "title",
-            ""
-        )
-    ).strip()
-
-
-    author = str(
-        data.get(
-            "author",
-            ""
-        )
-    ).strip()
-
-
-    date = str(
-        data.get(
-            "date",
-            ""
-        )
-    ).strip()
-
-
-    filename = str(
-        data.get(
-            "file",
-            ""
-        )
-    ).strip()
-
-
-    markdown = str(
-        data.get(
-            "markdown",
-            ""
-        )
-    )
-
-
-    if not title:
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Title required."
-        }), 400
-
-
-    if not author:
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Author required."
-        }), 400
-
-
-    if not date:
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Date required."
-        }), 400
-
-
-    if not filename:
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Filename required."
-        }), 400
-
-
-    if not markdown.strip():
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Article cannot be empty."
-        }), 400
-
-
-    if len(title) > MAX_TITLE_LENGTH:
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Title is too long."
-        }), 400
-
-
-    if len(author) > MAX_AUTHOR_LENGTH:
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Author is too long."
-        }), 400
-
-
-    if len(markdown) > MAX_MARKDOWN_LENGTH:
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Article is too large."
-        }), 413
-
-
-    if not SAFE_FILENAME.fullmatch(
-        filename
-    ):
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Invalid filename."
-        }), 400
-
-
-    try:
-
-        datetime.strptime(
-            date,
-            "%Y-%m-%d"
-        )
-
-    except ValueError:
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Date must use YYYY-MM-DD."
+                "Invalid filename.",
         }), 400
 
 
     target = (
-        POSTS_DIR / filename
+        POSTS_DIR /
+        filename
     ).resolve()
 
 
@@ -540,32 +440,371 @@ def publish():
         return jsonify({
             "ok": False,
             "error":
-                "Invalid post path."
+                "Invalid post path.",
+        }), 400
+
+
+    if not target.is_file():
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Post not found.",
+        }), 404
+
+
+    response = (
+        send_from_directory(
+            POSTS_DIR,
+            filename,
+            mimetype=(
+                "text/markdown; "
+                "charset=utf-8"
+            ),
+        )
+    )
+
+
+    response.headers[
+        "Cache-Control"
+    ] = (
+        "no-cache, no-store, "
+        "must-revalidate"
+    )
+
+
+    return response
+
+
+@app.get("/api/config")
+def public_config():
+
+    return jsonify({
+        "ok": True,
+        "macosOnly": MACOS_ONLY,
+    })
+
+
+@app.get("/api/auth/status")
+def auth_status():
+
+    return jsonify({
+        "ok": True,
+        "authenticated":
+            is_authenticated(),
+    })
+
+
+@app.post("/api/auth")
+def authenticate():
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+
+    if not isinstance(
+        data,
+        dict,
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Invalid request.",
+        }), 400
+
+
+    phrase = str(
+        data.get(
+            "phrase",
+            "",
+        )
+    )
+
+
+    if not PUBLISH_PHRASE:
+
+        print(
+            "WARNING: PUBLISH_PHRASE "
+            "is not configured."
+        )
+
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Server authentication "
+                "is not configured.",
+        }), 500
+
+
+    if (
+        MACOS_ONLY
+        and
+        not is_mac_request()
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Writing access is "
+                "limited to macOS.",
+        }), 403
+
+
+    valid_phrase = (
+        hmac.compare_digest(
+            phrase,
+            PUBLISH_PHRASE,
+        )
+    )
+
+
+    if not valid_phrase:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Incorrect publishing phrase.",
+        }), 403
+
+
+    session.clear()
+
+
+    session.permanent = True
+
+
+    session[
+        "writer_authenticated"
+    ] = True
+
+
+    session[
+        "authenticated_at"
+    ] = datetime.utcnow().isoformat()
+
+
+    return jsonify({
+        "ok": True,
+        "authenticated": True,
+    })
+
+
+@app.post("/api/logout")
+def logout():
+
+    session.clear()
+
+
+    return jsonify({
+        "ok": True,
+    })
+
+
+@app.post("/api/publish")
+def publish():
+
+    if not is_authenticated():
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Authentication required.",
+        }), 401
+
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+
+    if not isinstance(
+        data,
+        dict,
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Invalid request.",
+        }), 400
+
+
+    title = str(
+        data.get(
+            "title",
+            "",
+        )
+    ).strip()
+
+
+    author = str(
+        data.get(
+            "author",
+            "",
+        )
+    ).strip()
+
+
+    date = str(
+        data.get(
+            "date",
+            "",
+        )
+    ).strip()
+
+
+    filename = str(
+        data.get(
+            "file",
+            "",
+        )
+    ).strip()
+
+
+    markdown = str(
+        data.get(
+            "markdown",
+            "",
+        )
+    )
+
+
+    if not title:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Title required.",
+        }), 400
+
+
+    if not author:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Author required.",
+        }), 400
+
+
+    if not date:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Date required.",
+        }), 400
+
+
+    if not filename:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Filename required.",
+        }), 400
+
+
+    if not markdown.strip():
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Article cannot be empty.",
+        }), 400
+
+
+    if (
+        len(title)
+        >
+        MAX_TITLE_LENGTH
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Title is too long.",
+        }), 400
+
+
+    if (
+        len(author)
+        >
+        MAX_AUTHOR_LENGTH
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Author is too long.",
+        }), 400
+
+
+    if (
+        len(markdown)
+        >
+        MAX_MARKDOWN_LENGTH
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Article is too large.",
+        }), 413
+
+
+    if not SAFE_FILENAME.fullmatch(
+        filename
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Invalid filename.",
         }), 400
 
 
     try:
 
-        target.write_text(
-            markdown,
-            encoding="utf-8"
+        datetime.strptime(
+            date,
+            "%Y-%m-%d",
         )
 
-    except OSError as error:
-
-        print(
-            "Failed writing post:",
-            error
-        )
+    except ValueError:
 
         return jsonify({
             "ok": False,
             "error":
-                "Could not write post."
-        }), 500
+                "Date must use YYYY-MM-DD.",
+        }), 400
 
 
-    posts = read_posts()
+    posts_root = (
+        POSTS_DIR.resolve()
+    )
+
+
+    target = (
+        POSTS_DIR /
+        filename
+    ).resolve()
+
+
+    if (
+        target.parent
+        !=
+        posts_root
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Invalid post path.",
+        }), 400
 
 
     entry = {
@@ -576,6 +815,9 @@ def publish():
     }
 
 
+    posts = read_posts()
+
+
     replaced = False
 
 
@@ -583,9 +825,11 @@ def publish():
         posts
     ):
 
-        if post.get(
-            "file"
-        ) == filename:
+        if (
+            post.get("file")
+            ==
+            filename
+        ):
 
             posts[index] = entry
 
@@ -605,11 +849,55 @@ def publish():
         key=lambda post: str(
             post.get(
                 "date",
-                ""
+                "",
             )
         ),
-        reverse=True
+        reverse=True,
     )
+
+
+    old_markdown = None
+
+    post_previously_existed = (
+        target.exists()
+    )
+
+
+    if post_previously_existed:
+
+        try:
+
+            old_markdown = (
+                target.read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        except OSError:
+
+            old_markdown = None
+
+
+    try:
+
+        target.write_text(
+            markdown,
+            encoding="utf-8",
+        )
+
+    except OSError as error:
+
+        print(
+            "Failed writing post:",
+            error,
+        )
+
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Could not write post.",
+        }), 500
 
 
     try:
@@ -621,41 +909,47 @@ def publish():
     except OSError as error:
 
         print(
-            "Failed writing JSONL:",
-            error
+            "Failed writing post index:",
+            error,
         )
+
+
+        try:
+
+            if (
+                post_previously_existed
+                and
+                old_markdown is not None
+            ):
+
+                target.write_text(
+                    old_markdown,
+                    encoding="utf-8",
+                )
+
+            elif target.exists():
+
+                target.unlink()
+
+        except OSError as rollback_error:
+
+            print(
+                "Failed rolling back post:",
+                rollback_error,
+            )
+
 
         return jsonify({
             "ok": False,
             "error":
-                "Post was written but index update failed."
+                "Could not update "
+                "the post index.",
         }), 500
 
 
     return jsonify({
         "ok": True,
-        "post": entry
-    })
-
-
-@app.get("/api/debug/posts")
-def debug_posts():
-
-    return jsonify({
-        "posts_dir":
-            str(POSTS_DIR),
-
-        "index_file":
-            str(INDEX_FILE),
-
-        "index_exists":
-            INDEX_FILE.exists(),
-
-        "posts":
-            read_posts(),
-
-        "macos_only":
-            MACOS_ONLY,
+        "post": entry,
     })
 
 
@@ -693,14 +987,36 @@ def security_headers(response):
     ] = (
         "default-src 'self'; "
         "script-src 'self'; "
-        "style-src 'self' 'unsafe-inline'; "
+        "style-src 'self' "
+        "'unsafe-inline'; "
         "img-src 'self' data:; "
         "font-src 'self'; "
         "connect-src 'self'; "
         "object-src 'none'; "
         "base-uri 'self'; "
+        "form-action 'self'; "
         "frame-ancestors 'none';"
     )
+
+
+    if (
+        request.path.startswith(
+            "/api/"
+        )
+    ):
+
+        response.headers[
+            "Cache-Control"
+        ] = (
+            "no-store, "
+            "no-cache, "
+            "must-revalidate"
+        )
+
+
+        response.headers[
+            "Pragma"
+        ] = "no-cache"
 
 
     return response
@@ -716,13 +1032,33 @@ def not_found(error):
         return jsonify({
             "ok": False,
             "error":
-                "Endpoint not found."
+                "Endpoint not found.",
         }), 404
 
 
     return (
         "Not found",
-        404
+        404,
+    )
+
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+
+    if request.path.startswith(
+        "/api/"
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Method not allowed.",
+        }), 405
+
+
+    return (
+        "Method not allowed",
+        405,
     )
 
 
@@ -732,7 +1068,7 @@ def too_large(error):
     return jsonify({
         "ok": False,
         "error":
-            "Request is too large."
+            "Request is too large.",
     }), 413
 
 
@@ -741,7 +1077,7 @@ def server_error(error):
 
     print(
         "Internal server error:",
-        error
+        error,
     )
 
 
@@ -752,40 +1088,44 @@ def server_error(error):
         return jsonify({
             "ok": False,
             "error":
-                "Internal server error."
+                "Internal server error.",
         }), 500
 
 
     return (
         "Internal server error",
-        500
+        500,
     )
 
 
 if __name__ == "__main__":
 
     print(
-        f"Posts directory: {POSTS_DIR}"
+        f"Posts directory: "
+        f"{POSTS_DIR}"
     )
 
 
     print(
-        f"Posts index: {INDEX_FILE}"
+        "Publish phrase configured: "
+        f"{bool(PUBLISH_PHRASE)}"
     )
 
 
     print(
-        f"Publish phrase configured: {bool(PUBLISH_PHRASE)}"
+        "macOS-only writing: "
+        f"{MACOS_ONLY}"
     )
 
 
     print(
-        f"macOS-only writing: {MACOS_ONLY}"
+        "Secure session cookie: "
+        f"{SESSION_COOKIE_SECURE}"
     )
 
 
     app.run(
         host="127.0.0.1",
         port=5000,
-        debug=True
+        debug=False,
     )
