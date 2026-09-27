@@ -13,13 +13,16 @@ let macOSOnly = true;
 let autosaveTimer = null;
 
 
-const SITE_TITLE = "Unfuck AI";
+const SITE_TITLE =
+  "Unfuck AI";
 
 const DRAFT_KEY =
   "IKEWL-WAHAS-AJKAD-WAKLL";
 
 
-const escapeHTML = (value = "") =>
+const escapeHTML = (
+  value = ""
+) =>
   String(value).replace(
     /[&<>"']/g,
     character => ({
@@ -32,7 +35,9 @@ const escapeHTML = (value = "") =>
   );
 
 
-const slugify = (value = "") =>
+const slugify = (
+  value = ""
+) =>
   String(value)
     .toLowerCase()
     .trim()
@@ -46,7 +51,9 @@ const slugify = (value = "") =>
     );
 
 
-function formatDate(value = "") {
+function formatDate(
+  value = ""
+) {
 
   if (!value) {
     return "";
@@ -64,9 +71,7 @@ function formatDate(value = "") {
       date.getTime()
     )
   ) {
-
     return value;
-
   }
 
 
@@ -82,7 +87,9 @@ function formatDate(value = "") {
 }
 
 
-function inlineMarkdown(text = "") {
+function inlineMarkdown(
+  text = ""
+) {
 
   return escapeHTML(text)
 
@@ -109,7 +116,9 @@ function inlineMarkdown(text = "") {
 }
 
 
-function renderMarkdown(source = "") {
+function renderMarkdown(
+  source = ""
+) {
 
   const lines =
     String(source)
@@ -118,50 +127,48 @@ function renderMarkdown(source = "") {
 
 
   let html = "";
-
   let paragraph = [];
-
   let listType = "";
-
   let inCode = false;
-
   let codeLines = [];
 
 
-  const flushParagraph = () => {
+  const flushParagraph =
+    () => {
 
-    if (
-      !paragraph.length
-    ) {
-      return;
-    }
-
-
-    html +=
-      `<p>${inlineMarkdown(
-        paragraph.join(" ")
-      )}</p>`;
+      if (
+        !paragraph.length
+      ) {
+        return;
+      }
 
 
-    paragraph = [];
-
-  };
-
-
-  const closeList = () => {
-
-    if (!listType) {
-      return;
-    }
+      html +=
+        `<p>${inlineMarkdown(
+          paragraph.join(" ")
+        )}</p>`;
 
 
-    html +=
-      `</${listType}>`;
+      paragraph = [];
+
+    };
 
 
-    listType = "";
+  const closeList =
+    () => {
 
-  };
+      if (!listType) {
+        return;
+      }
+
+
+      html +=
+        `</${listType}>`;
+
+
+      listType = "";
+
+    };
 
 
   for (
@@ -184,9 +191,7 @@ function renderMarkdown(source = "") {
 
         html +=
           `<pre><code>${escapeHTML(
-            codeLines.join(
-              "\n"
-            )
+            codeLines.join("\n")
           )}</code></pre>`;
 
 
@@ -266,10 +271,7 @@ function renderMarkdown(source = "") {
 
       closeList();
 
-
-      html +=
-        "<hr>";
-
+      html += "<hr>";
 
       continue;
 
@@ -331,10 +333,8 @@ function renderMarkdown(source = "") {
 
         closeList();
 
-
         html +=
           `<${type}>`;
-
 
         listType =
           type;
@@ -415,7 +415,6 @@ function openOverlay(
           "open"
         );
 
-
         item.setAttribute(
           "aria-hidden",
           "true"
@@ -437,11 +436,9 @@ function openOverlay(
   );
 
 
-  document.body
-    .classList
-    .add(
-      "modal-open"
-    );
+  document.body.classList.add(
+    "modal-open"
+  );
 
 
   if (
@@ -562,11 +559,9 @@ async function closeOverlay(id) {
     !$(".overlay.open")
   ) {
 
-    document.body
-      .classList
-      .remove(
-        "modal-open"
-      );
+    document.body.classList.remove(
+      "modal-open"
+    );
 
   }
 
@@ -634,9 +629,7 @@ document.addEventListener(
       event.key !==
       "Tab"
     ) {
-
       return;
-
     }
 
 
@@ -657,9 +650,7 @@ document.addEventListener(
         );
 
 
-    if (
-      !focusable.length
-    ) {
+    if (!focusable.length) {
       return;
     }
 
@@ -726,18 +717,14 @@ async function loadPublicConfig() {
       await fetch(
         "/api/config",
         {
-          cache:
-            "no-store",
-
+          cache: "no-store",
           credentials:
             "same-origin"
         }
       );
 
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
 
       throw new Error(
         "Could not load configuration."
@@ -787,9 +774,7 @@ async function getPosts() {
     );
 
 
-  if (
-    !response.ok
-  ) {
+  if (!response.ok) {
 
     throw new Error(
       "Could not load writing."
@@ -818,14 +803,12 @@ async function getPosts() {
 
   posts =
     result.posts
-
       .filter(
         post =>
           post &&
           typeof post ===
             "object"
       )
-
       .sort(
         (a, b) =>
           String(
@@ -871,9 +854,7 @@ function renderPostList() {
   }
 
 
-  if (
-    !posts.length
-  ) {
+  if (!posts.length) {
 
     list.innerHTML =
       '<div class="loading-card">' +
@@ -913,8 +894,7 @@ function renderPostList() {
 
       const readableDate =
         formatDate(
-          post.date ||
-          ""
+          post.date || ""
         );
 
 
@@ -938,7 +918,6 @@ function renderPostList() {
             readableDate
               ? `
                 <span>·</span>
-
                 <span>
                   ${escapeHTML(
                     readableDate
@@ -979,7 +958,6 @@ async function loadPosts() {
   try {
 
     await getPosts();
-
 
     renderPostList();
 
@@ -1057,9 +1035,7 @@ async function openPost(
       );
 
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
 
       throw new Error(
         "Could not load post."
@@ -1164,18 +1140,14 @@ async function openReader(
   );
 
 
-  if (
-    !posts.length
-  ) {
+  if (!posts.length) {
 
     await loadPosts();
 
   }
 
 
-  if (
-    posts.length
-  ) {
+  if (posts.length) {
 
     const active =
       $(".post-item.active");
@@ -1205,7 +1177,6 @@ function bindReaderButtons() {
         event => {
 
           event.preventDefault();
-
 
           event.stopPropagation();
 
@@ -1268,12 +1239,8 @@ async function checkAuthentication() {
       );
 
 
-    if (
-      !response.ok
-    ) {
-
+    if (!response.ok) {
       return false;
-
     }
 
 
@@ -1347,7 +1314,6 @@ async function startWriting(
       "Writing access is limited to macOS."
     );
 
-
     return;
 
   }
@@ -1375,18 +1341,12 @@ async function startWriting(
 
 
     if (input) {
-
-      input.value =
-        "";
-
+      input.value = "";
     }
 
 
     if (status) {
-
-      status.textContent =
-        "";
-
+      status.textContent = "";
     }
 
 
@@ -1418,7 +1378,6 @@ function bindWriteButtons() {
       ...$$(
         "[data-open-write]"
       ),
-
       ...$$(
         "#open-write"
       )
@@ -1595,9 +1554,7 @@ async function handleAuthentication(
       await checkAuthentication();
 
 
-    if (
-      !authenticated
-    ) {
+    if (!authenticated) {
 
       throw new Error(
         "Authentication session was not created."
@@ -1611,18 +1568,12 @@ async function handleAuthentication(
 
 
     if (input) {
-
-      input.value =
-        "";
-
+      input.value = "";
     }
 
 
     if (status) {
-
-      status.textContent =
-        "";
-
+      status.textContent = "";
     }
 
 
@@ -1705,26 +1656,19 @@ function readDraft() {
 }
 
 
-function getCurrentDraft() {
-
-  return Object.fromEntries(
-    editorFields.map(
-      selector => [
-        selector,
-        $(selector)
-          ?.value ||
-        ""
-      ]
-    )
-  );
-
-}
-
-
 function saveDraft() {
 
   const draft =
-    getCurrentDraft();
+    Object.fromEntries(
+      editorFields.map(
+        selector => [
+          selector,
+          $(selector)
+            ?.value ||
+          ""
+        ]
+      )
+    );
 
 
   try {
@@ -1744,19 +1688,6 @@ function saveDraft() {
       "Draft save failed:",
       error
     );
-
-
-    const state =
-      $("#save-state");
-
-
-    if (state) {
-
-      state.textContent =
-        "Save failed";
-
-    }
-
 
     return;
 
@@ -1829,9 +1760,7 @@ function restoreDraft() {
 
 
   if (!draft) {
-
     return;
-
   }
 
 
@@ -1842,35 +1771,27 @@ function restoreDraft() {
         $(selector);
 
 
-      if (
-        !element
-      ) {
-
+      if (!element) {
         return;
-
       }
 
 
-      const savedValue =
+      const value =
         draft[selector];
 
 
       if (
-        typeof savedValue !==
+        typeof value !==
         "string"
       ) {
-
         return;
-
       }
 
 
-      if (
-        !element.value
-      ) {
+      if (!element.value) {
 
         element.value =
-          savedValue;
+          value;
 
       }
 
@@ -1889,17 +1810,18 @@ function restoreDraft() {
       );
 
 
-  const state =
-    $("#save-state");
+  if (editorDirty) {
+
+    const state =
+      $("#save-state");
 
 
-  if (
-    state &&
-    editorDirty
-  ) {
+    if (state) {
 
-    state.textContent =
-      "Saved locally";
+      state.textContent =
+        "Saved locally";
+
+    }
 
   }
 
@@ -1931,6 +1853,54 @@ function clearDraft() {
 }
 
 
+function clearEditor() {
+
+  editorFields.forEach(
+    selector => {
+
+      const element =
+        $(selector);
+
+
+      if (element) {
+
+        element.value =
+          "";
+
+      }
+
+    }
+  );
+
+
+  const file =
+    $("#editor-file");
+
+
+  if (file) {
+
+    delete file.dataset.manual;
+
+  }
+
+
+  const state =
+    $("#save-state");
+
+
+  if (state) {
+
+    state.textContent =
+      "Draft";
+
+  }
+
+
+  updatePreview();
+
+}
+
+
 function updatePreview() {
 
   const markdown =
@@ -1939,26 +1909,24 @@ function updatePreview() {
     "";
 
 
-  if (
-    !editorPreview
-  ) {
-
+  if (!editorPreview) {
     return;
-
   }
 
 
   editorPreview.innerHTML =
     markdown.trim()
+
       ? renderMarkdown(
           markdown
         )
+
       : "<p>Preview will appear here.</p>";
 
 }
 
 
-function bindEditorAutosave() {
+function bindAutosave() {
 
   editorFields.forEach(
     selector => {
@@ -1987,36 +1955,10 @@ async function openEditor() {
     await checkAuthentication();
 
 
-  if (
-    !authenticated
-  ) {
+  if (!authenticated) {
 
     editorAuthenticated =
       false;
-
-
-    const input =
-      $("#auth-phrase");
-
-
-    const status =
-      $("#auth-status");
-
-
-    if (input) {
-
-      input.value =
-        "";
-
-    }
-
-
-    if (status) {
-
-      status.textContent =
-        "Enter the publishing phrase.";
-
-    }
 
 
     openOverlay(
@@ -2117,9 +2059,7 @@ function bindAutomaticFilename() {
           file.dataset.manual ===
           "true"
         ) {
-
           return;
-
         }
 
 
@@ -2183,9 +2123,7 @@ function showPublishStatus(
   );
 
 
-  if (
-    timeout > 0
-  ) {
+  if (timeout > 0) {
 
     showPublishStatus.timer =
       setTimeout(
@@ -2219,49 +2157,7 @@ async function handlePublish(
     await checkAuthentication();
 
 
-  if (
-    !authenticated
-  ) {
-
-    editorAuthenticated =
-      false;
-
-
-    const editorOverlay =
-      $("#editor-overlay");
-
-
-    if (
-      editorOverlay
-    ) {
-
-      editorOverlay
-        .classList
-        .remove(
-          "open"
-        );
-
-
-      editorOverlay
-        .setAttribute(
-          "aria-hidden",
-          "true"
-        );
-
-    }
-
-
-    const status =
-      $("#auth-status");
-
-
-    if (status) {
-
-      status.textContent =
-        "Authentication expired. Enter the publishing phrase again.";
-
-    }
-
+  if (!authenticated) {
 
     openOverlay(
       "auth-overlay",
@@ -2423,61 +2319,13 @@ async function handlePublish(
       );
 
 
-    const raw =
-      await response.text();
-
-
-    let result = null;
-
-
-    if (raw) {
-
-      try {
-
-        result =
-          JSON.parse(raw);
-
-      }
-
-      catch {
-
-        console.error(
-          "Invalid publish response:",
-          raw
-        );
-
-      }
-
-    }
+    const result =
+      await response.json();
 
 
     if (
-      response.status ===
-      401
-    ) {
-
-      throw new Error(
-        "Publishing session expired."
-      );
-
-    }
-
-
-    if (
-      response.status ===
-      403
-    ) {
-
-      throw new Error(
-        result?.error ||
-        "Publishing was denied."
-      );
-
-    }
-
-
-    if (
-      !response.ok
+      !response.ok ||
+      !result.ok
     ) {
 
       throw new Error(
@@ -2488,38 +2336,7 @@ async function handlePublish(
     }
 
 
-    if (
-      !result ||
-      result.ok !==
-        true
-    ) {
-
-      throw new Error(
-        result?.error ||
-        "The server did not confirm publication."
-      );
-
-    }
-
-
     clearDraft();
-
-
-    const saveState =
-      $("#save-state");
-
-
-    if (saveState) {
-
-      saveState.textContent =
-        "Published";
-
-    }
-
-
-    showPublishStatus(
-      "Published."
-    );
 
 
     await loadPosts();
@@ -2533,34 +2350,21 @@ async function handlePublish(
       );
 
 
-    const editorOverlay =
+    const overlay =
       $("#editor-overlay");
 
 
-    if (
-      editorOverlay
-    ) {
-
-      editorOverlay
-        .classList
-        .remove(
-          "open"
-        );
-
-
-      editorOverlay
-        .setAttribute(
-          "aria-hidden",
-          "true"
-        );
-
-    }
-
-
-    document.body
-      .classList
+    overlay
+      ?.classList
       .remove(
-        "modal-open"
+        "open"
+      );
+
+
+    overlay
+      ?.setAttribute(
+        "aria-hidden",
+        "true"
       );
 
 
@@ -2597,20 +2401,6 @@ async function handlePublish(
       6000
     );
 
-
-    if (
-      error.message
-        ?.toLowerCase()
-        .includes(
-          "session expired"
-        )
-    ) {
-
-      editorAuthenticated =
-        false;
-
-    }
-
   }
 
   finally {
@@ -2621,6 +2411,209 @@ async function handlePublish(
 
     button.textContent =
       "Publish";
+
+  }
+
+}
+
+
+async function handleDelete(
+  event
+) {
+
+  event.preventDefault();
+
+
+  const button =
+    event.currentTarget;
+
+
+  const authenticated =
+    await checkAuthentication();
+
+
+  if (!authenticated) {
+
+    openOverlay(
+      "auth-overlay",
+      button
+    );
+
+
+    return;
+
+  }
+
+
+  const file =
+    $("#editor-file")
+      ?.value
+      .trim() ||
+    "";
+
+
+  if (!file) {
+
+    showPublishStatus(
+      "Enter the article filename first."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !/^[A-Za-z0-9_-]+\.md$/
+      .test(file)
+  ) {
+
+    showPublishStatus(
+      "Invalid article filename."
+    );
+
+    return;
+
+  }
+
+
+  const existing =
+    posts.find(
+      post =>
+        post.file ===
+        file
+    );
+
+
+  if (!existing) {
+
+    showPublishStatus(
+      "That article is not published."
+    );
+
+    return;
+
+  }
+
+
+  const confirmed =
+    window.confirm(
+      `Delete "${existing.title}"?\n\nThis cannot be undone.`
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  button.disabled =
+    true;
+
+
+  button.textContent =
+    "Deleting…";
+
+
+  showPublishStatus(
+    "Deleting…",
+    0
+  );
+
+
+  try {
+
+    const response =
+      await fetch(
+        `/api/posts/${encodeURIComponent(
+          file
+        )}`,
+        {
+          method:
+            "DELETE",
+
+          credentials:
+            "same-origin"
+        }
+      );
+
+
+    const result =
+      await response.json();
+
+
+    if (
+      !response.ok ||
+      !result.ok
+    ) {
+
+      throw new Error(
+        result?.error ||
+        `Delete failed with HTTP ${response.status}.`
+      );
+
+    }
+
+
+    clearDraft();
+
+    clearEditor();
+
+
+    await loadPosts();
+
+
+    const overlay =
+      $("#editor-overlay");
+
+
+    overlay
+      ?.classList
+      .remove(
+        "open"
+      );
+
+
+    overlay
+      ?.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+
+
+    await logoutWriter();
+
+
+    await openReader(
+      button
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Delete failed:",
+      error
+    );
+
+
+    showPublishStatus(
+      error.message ||
+      "Delete failed.",
+      6000
+    );
+
+  }
+
+  finally {
+
+    button.disabled =
+      false;
+
+
+    button.textContent =
+      "Delete";
 
   }
 
@@ -2644,6 +2637,17 @@ function bindPublishButton() {
     ?.addEventListener(
       "click",
       handlePublish
+    );
+
+}
+
+
+function bindDeleteButton() {
+
+  $("#delete-button")
+    ?.addEventListener(
+      "click",
+      handleDelete
     );
 
 }
@@ -2717,24 +2721,22 @@ document.addEventListener(
 
     bindAuthentication();
 
-    bindEditorAutosave();
+    bindAutosave();
 
     bindAutomaticFilename();
 
     bindPublishButton();
 
+    bindDeleteButton();
+
 
     await loadPublicConfig();
 
-
     await logoutWriter();
-
 
     await loadPosts();
 
-
     updatePreview();
-
 
     await handleInitialHash();
 
@@ -2754,37 +2756,32 @@ window.addEventListener(
 
     if (!match) {
 
+      const overlay =
+        $("#reader-overlay");
+
+
       if (
-        $("#reader-overlay")
+        overlay
           ?.classList
           .contains(
             "open"
           )
       ) {
 
-        const overlay =
-          $("#reader-overlay");
+        overlay.classList.remove(
+          "open"
+        );
 
 
-        overlay
-          ?.classList
-          .remove(
-            "open"
-          );
+        overlay.setAttribute(
+          "aria-hidden",
+          "true"
+        );
 
 
-        overlay
-          ?.setAttribute(
-            "aria-hidden",
-            "true"
-          );
-
-
-        document.body
-          .classList
-          .remove(
-            "modal-open"
-          );
+        document.body.classList.remove(
+          "modal-open"
+        );
 
 
         document.title =
@@ -2848,9 +2845,7 @@ window.addEventListener(
   "beforeunload",
   () => {
 
-    if (
-      editorDirty
-    ) {
+    if (editorDirty) {
 
       clearTimeout(
         autosaveTimer

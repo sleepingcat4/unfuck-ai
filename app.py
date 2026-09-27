@@ -23,9 +23,7 @@ load_dotenv()
 
 
 BASE_DIR = Path(__file__).resolve().parent
-
 POSTS_DIR = BASE_DIR / "posts"
-
 INDEX_FILE = POSTS_DIR / "index.jsonl"
 
 
@@ -50,17 +48,33 @@ FLASK_SECRET_KEY = os.environ.get(
 
 if not FLASK_SECRET_KEY:
 
-    FLASK_SECRET_KEY = (
-        os.urandom(32).hex()
-    )
+    FLASK_SECRET_KEY = os.urandom(
+        32
+    ).hex()
 
     print(
-        "WARNING: FLASK_SECRET_KEY is not configured. "
-        "Sessions will be invalidated whenever the app restarts."
+        "WARNING: FLASK_SECRET_KEY is not configured."
     )
 
 
 app.secret_key = FLASK_SECRET_KEY
+
+
+PUBLISH_PHRASE = os.environ.get(
+    "PUBLISH_PHRASE",
+    "",
+)
+
+
+MACOS_ONLY = os.environ.get(
+    "MACOS_ONLY",
+    "true",
+).strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 
 IS_PRODUCTION = os.environ.get(
@@ -91,32 +105,13 @@ app.config.update(
 )
 
 
-PUBLISH_PHRASE = os.environ.get(
-    "PUBLISH_PHRASE",
-    "",
-)
-
-
-MACOS_ONLY = os.environ.get(
-    "MACOS_ONLY",
-    "true",
-).strip().lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
-
-
 SAFE_FILENAME = re.compile(
     r"^[A-Za-z0-9_-]+\.md$"
 )
 
 
 MAX_TITLE_LENGTH = 200
-
 MAX_AUTHOR_LENGTH = 100
-
 MAX_MARKDOWN_LENGTH = 300_000
 
 
@@ -147,7 +142,6 @@ def is_mac_request():
         device,
         dict,
     ):
-
         device = {}
 
 
@@ -180,7 +174,6 @@ def normalize_post(post):
         post,
         dict,
     ):
-
         return None
 
 
@@ -227,7 +220,6 @@ def normalize_post(post):
     if not SAFE_FILENAME.fullmatch(
         filename
     ):
-
         return None
 
 
@@ -245,7 +237,6 @@ def read_posts():
 
 
     if not INDEX_FILE.exists():
-
         return posts
 
 
@@ -267,7 +258,7 @@ def read_posts():
 
                 try:
 
-                    raw_post = json.loads(
+                    post = json.loads(
                         line
                     )
 
@@ -282,7 +273,7 @@ def read_posts():
 
 
                 post = normalize_post(
-                    raw_post
+                    post
                 )
 
 
@@ -295,7 +286,7 @@ def read_posts():
     except OSError as error:
 
         print(
-            "Could not read posts index:",
+            "Failed reading posts index:",
             error,
         )
 
@@ -324,29 +315,25 @@ def write_posts(posts):
     )
 
 
-    temp_fd, temp_name = (
-        tempfile.mkstemp(
-            prefix="index-",
-            suffix=".jsonl.tmp",
-            dir=str(POSTS_DIR),
-        )
+    fd, temp_name = tempfile.mkstemp(
+        prefix="index-",
+        suffix=".tmp",
+        dir=str(POSTS_DIR),
     )
 
 
     try:
 
         with os.fdopen(
-            temp_fd,
+            fd,
             "w",
             encoding="utf-8",
         ) as file:
 
             for post in posts:
 
-                normalized = (
-                    normalize_post(
-                        post
-                    )
+                normalized = normalize_post(
+                    post
                 )
 
 
@@ -378,14 +365,11 @@ def write_posts(posts):
     except Exception:
 
         try:
-
             os.unlink(
                 temp_name
             )
-
         except OSError:
             pass
-
 
         raise
 
@@ -401,12 +385,9 @@ def index():
 @app.get("/api/posts")
 def posts_api():
 
-    posts = read_posts()
-
-
     return jsonify({
         "ok": True,
-        "posts": posts,
+        "posts": read_posts(),
     })
 
 
@@ -419,8 +400,7 @@ def get_post(filename):
 
         return jsonify({
             "ok": False,
-            "error":
-                "Invalid filename.",
+            "error": "Invalid filename.",
         }), 400
 
 
@@ -430,17 +410,14 @@ def get_post(filename):
     ).resolve()
 
 
-    posts_root = (
-        POSTS_DIR.resolve()
-    )
+    root = POSTS_DIR.resolve()
 
 
-    if target.parent != posts_root:
+    if target.parent != root:
 
         return jsonify({
             "ok": False,
-            "error":
-                "Invalid post path.",
+            "error": "Invalid post path.",
         }), 400
 
 
@@ -448,27 +425,22 @@ def get_post(filename):
 
         return jsonify({
             "ok": False,
-            "error":
-                "Post not found.",
+            "error": "Post not found.",
         }), 404
 
 
-    response = (
-        send_from_directory(
-            POSTS_DIR,
-            filename,
-            mimetype=(
-                "text/markdown; "
-                "charset=utf-8"
-            ),
-        )
+    response = send_from_directory(
+        POSTS_DIR,
+        filename,
+        mimetype="text/markdown",
     )
 
 
     response.headers[
         "Cache-Control"
     ] = (
-        "no-cache, no-store, "
+        "no-store, "
+        "no-cache, "
         "must-revalidate"
     )
 
@@ -510,8 +482,7 @@ def authenticate():
 
         return jsonify({
             "ok": False,
-            "error":
-                "Invalid request.",
+            "error": "Invalid request.",
         }), 400
 
 
@@ -525,17 +496,10 @@ def authenticate():
 
     if not PUBLISH_PHRASE:
 
-        print(
-            "WARNING: PUBLISH_PHRASE "
-            "is not configured."
-        )
-
-
         return jsonify({
             "ok": False,
             "error":
-                "Server authentication "
-                "is not configured.",
+                "Server authentication is not configured.",
         }), 500
 
 
@@ -548,20 +512,14 @@ def authenticate():
         return jsonify({
             "ok": False,
             "error":
-                "Writing access is "
-                "limited to macOS.",
+                "Writing access is limited to macOS.",
         }), 403
 
 
-    valid_phrase = (
-        hmac.compare_digest(
-            phrase,
-            PUBLISH_PHRASE,
-        )
-    )
-
-
-    if not valid_phrase:
+    if not hmac.compare_digest(
+        phrase,
+        PUBLISH_PHRASE,
+    ):
 
         return jsonify({
             "ok": False,
@@ -572,18 +530,11 @@ def authenticate():
 
     session.clear()
 
-
     session.permanent = True
-
 
     session[
         "writer_authenticated"
     ] = True
-
-
-    session[
-        "authenticated_at"
-    ] = datetime.utcnow().isoformat()
 
 
     return jsonify({
@@ -627,8 +578,7 @@ def publish():
 
         return jsonify({
             "ok": False,
-            "error":
-                "Invalid request.",
+            "error": "Invalid request.",
         }), 400
 
 
@@ -676,8 +626,7 @@ def publish():
 
         return jsonify({
             "ok": False,
-            "error":
-                "Title required.",
+            "error": "Title required.",
         }), 400
 
 
@@ -685,8 +634,7 @@ def publish():
 
         return jsonify({
             "ok": False,
-            "error":
-                "Author required.",
+            "error": "Author required.",
         }), 400
 
 
@@ -694,8 +642,7 @@ def publish():
 
         return jsonify({
             "ok": False,
-            "error":
-                "Date required.",
+            "error": "Date required.",
         }), 400
 
 
@@ -717,11 +664,7 @@ def publish():
         }), 400
 
 
-    if (
-        len(title)
-        >
-        MAX_TITLE_LENGTH
-    ):
+    if len(title) > MAX_TITLE_LENGTH:
 
         return jsonify({
             "ok": False,
@@ -730,11 +673,7 @@ def publish():
         }), 400
 
 
-    if (
-        len(author)
-        >
-        MAX_AUTHOR_LENGTH
-    ):
+    if len(author) > MAX_AUTHOR_LENGTH:
 
         return jsonify({
             "ok": False,
@@ -743,11 +682,7 @@ def publish():
         }), 400
 
 
-    if (
-        len(markdown)
-        >
-        MAX_MARKDOWN_LENGTH
-    ):
+    if len(markdown) > MAX_MARKDOWN_LENGTH:
 
         return jsonify({
             "ok": False,
@@ -783,9 +718,7 @@ def publish():
         }), 400
 
 
-    posts_root = (
-        POSTS_DIR.resolve()
-    )
+    root = POSTS_DIR.resolve()
 
 
     target = (
@@ -794,11 +727,7 @@ def publish():
     ).resolve()
 
 
-    if (
-        target.parent
-        !=
-        posts_root
-    ):
+    if target.parent != root:
 
         return jsonify({
             "ok": False,
@@ -858,12 +787,10 @@ def publish():
 
     old_markdown = None
 
-    post_previously_existed = (
-        target.exists()
-    )
+    existed = target.exists()
 
 
-    if post_previously_existed:
+    if existed:
 
         try:
 
@@ -874,7 +801,6 @@ def publish():
             )
 
         except OSError:
-
             old_markdown = None
 
 
@@ -909,7 +835,7 @@ def publish():
     except OSError as error:
 
         print(
-            "Failed writing post index:",
+            "Failed writing index:",
             error,
         )
 
@@ -917,7 +843,7 @@ def publish():
         try:
 
             if (
-                post_previously_existed
+                existed
                 and
                 old_markdown is not None
             ):
@@ -934,7 +860,7 @@ def publish():
         except OSError as rollback_error:
 
             print(
-                "Failed rolling back post:",
+                "Rollback failed:",
                 rollback_error,
             )
 
@@ -942,14 +868,155 @@ def publish():
         return jsonify({
             "ok": False,
             "error":
-                "Could not update "
-                "the post index.",
+                "Post index update failed.",
         }), 500
 
 
     return jsonify({
         "ok": True,
         "post": entry,
+    })
+
+
+@app.delete("/api/posts/<filename>")
+def delete_post(filename):
+
+    if not is_authenticated():
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Authentication required.",
+        }), 401
+
+
+    if not SAFE_FILENAME.fullmatch(
+        filename
+    ):
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Invalid filename.",
+        }), 400
+
+
+    root = POSTS_DIR.resolve()
+
+
+    target = (
+        POSTS_DIR /
+        filename
+    ).resolve()
+
+
+    if target.parent != root:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Invalid post path.",
+        }), 400
+
+
+    posts = read_posts()
+
+
+    existing = next(
+        (
+            post
+            for post in posts
+            if post.get("file")
+            == filename
+        ),
+        None,
+    )
+
+
+    if existing is None:
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Article not found.",
+        }), 404
+
+
+    remaining = [
+        post
+        for post in posts
+        if post.get("file")
+        != filename
+    ]
+
+
+    previous_markdown = None
+
+
+    if target.exists():
+
+        try:
+
+            previous_markdown = (
+                target.read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        except OSError:
+            previous_markdown = None
+
+
+    try:
+
+        if target.exists():
+
+            target.unlink()
+
+
+        write_posts(
+            remaining
+        )
+
+    except OSError as error:
+
+        print(
+            "Failed deleting article:",
+            error,
+        )
+
+
+        if (
+            previous_markdown is not None
+            and
+            not target.exists()
+        ):
+
+            try:
+
+                target.write_text(
+                    previous_markdown,
+                    encoding="utf-8",
+                )
+
+            except OSError as rollback_error:
+
+                print(
+                    "Delete rollback failed:",
+                    rollback_error,
+                )
+
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Could not delete article.",
+        }), 500
+
+
+    return jsonify({
+        "ok": True,
+        "deleted": filename,
     })
 
 
@@ -999,10 +1066,8 @@ def security_headers(response):
     )
 
 
-    if (
-        request.path.startswith(
-            "/api/"
-        )
+    if request.path.startswith(
+        "/api/"
     ):
 
         response.headers[
@@ -1012,11 +1077,6 @@ def security_headers(response):
             "no-cache, "
             "must-revalidate"
         )
-
-
-        response.headers[
-            "Pragma"
-        ] = "no-cache"
 
 
     return response
@@ -1036,10 +1096,7 @@ def not_found(error):
         }), 404
 
 
-    return (
-        "Not found",
-        404,
-    )
+    return "Not found", 404
 
 
 @app.errorhandler(405)
@@ -1056,10 +1113,7 @@ def method_not_allowed(error):
         }), 405
 
 
-    return (
-        "Method not allowed",
-        405,
-    )
+    return "Method not allowed", 405
 
 
 @app.errorhandler(413)
@@ -1101,28 +1155,18 @@ def server_error(error):
 if __name__ == "__main__":
 
     print(
-        f"Posts directory: "
-        f"{POSTS_DIR}"
+        f"Posts directory: {POSTS_DIR}"
     )
-
 
     print(
         "Publish phrase configured: "
         f"{bool(PUBLISH_PHRASE)}"
     )
 
-
     print(
         "macOS-only writing: "
         f"{MACOS_ONLY}"
     )
-
-
-    print(
-        "Secure session cookie: "
-        f"{SESSION_COOKIE_SECURE}"
-    )
-
 
     app.run(
         host="127.0.0.1",
